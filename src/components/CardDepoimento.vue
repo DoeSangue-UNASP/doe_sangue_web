@@ -4,39 +4,33 @@ defineProps<{
     cidade: string;
     depoimento: string;
 }>();
-
 </script>
 
 <template>
-    <div class="depoimento-card-container">
-
+    <div class="depoimento-card-container poppins-medium">
         <div class="card-content">
             <p class="card-depoimento-text">
-                {{depoimento}}
+                "{{ depoimento }}"
             </p>
         </div>
-
         <div class="card-meta-data">
-            <h4 class="card-nome">
-                {{nome}}
+            <h4 class="card-nome poppins-light">
+                -- {{ nome }}
             </h4>
             <p class="card-cidade">
-               {{cidade}}
+                {{ cidade }}
             </p>
         </div>
-
     </div>
 </template>
 
 <style scoped>
-
 .depoimento-card-container {
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
     max-width: 400px;
-    min-height: 200px; 
-
+    min-height: 200px;
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -49,7 +43,7 @@ defineProps<{
 }
 
 .card-content {
-    flex-grow: 1; 
+    flex-grow: 1;
     margin-bottom: 1rem;
 }
 
@@ -58,18 +52,19 @@ defineProps<{
     font-size: 1.1rem;
     color: #333333;
     line-height: 1.5;
+    text-align: justify;
 }
 
 .card-meta-data {
     border-top: 1px solid #eeeeee;
     padding-top: 0.75rem;
-    text-align: right; 
+    text-align: right;
 }
 
 .card-nome {
     font-size: 1rem;
-    font-weight: 600; 
-    color: #cc0000; 
+    font-weight: 600;
+    color: #cc0000;
     margin: 0 0 0.25rem 0;
 }
 
