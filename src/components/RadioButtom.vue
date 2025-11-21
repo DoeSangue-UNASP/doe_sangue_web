@@ -3,7 +3,7 @@ defineProps<{
     id?: string;
     label: string;
     value?: string;
-    Group: string; // nome do grupo (qualquer coisa)
+    Group: string; 
 }>();
 
 const modelValue = defineModel<string>();
