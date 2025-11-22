@@ -55,19 +55,19 @@ const variantClass = computed(() => {
 
 
 .badge-success {
-    background: #34d399;
+    background: #2aa87a;
     color: #fff;
 }
 
 
 .badge-warning {
-    background: #FFCB00;
+    background: #cf9a14;
     color: #fff;
 }
 
 
 .badge-danger {
-    background: #FF4B47;
+    background: #bb3d3d;
     color: #fff;
 }
 

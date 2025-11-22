@@ -5,6 +5,10 @@ import { PhCaretLeft, PhCaretRight, PhFinnTheHuman, PhFunnel, PhPlus } from '@ph
 const props = defineProps({
     data: Array,
     columns: Array,
+    pageSize: {
+        type: Number,
+        default: 10,
+    }
 })
 
 import {
@@ -30,7 +34,7 @@ const sorting = ref([])
 const filter = ref('')
 const pagination = ref({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: props.pageSize,
 })
 
 const table = useVueTable({
