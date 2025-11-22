@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { PhCalendarDots, PhEye } from '@phosphor-icons/vue';
 import CustomButton from '../../components/CustomButton.vue';
-import CustomInput from '../../components/CustomInput.vue';
 import Table from '../../components/Table.vue';
 import { h } from 'vue';
 import Badge from '../../components/Badge.vue';
@@ -28,9 +27,8 @@ const columns = [
             const status = row.original.status;
 
             const variantMap = {
-                Agendado: "warning",
-                Concluido: "success",
-                Cancelado: "danger",
+                Aprovado: "success",
+                Reprovado: "danger",
             };
 
             return h(Badge, { variant: variantMap[status] }, () => status);
@@ -50,17 +48,17 @@ const data = [
     {
         local: "Hemocentro A",
         data: "22/11/2025 10:00",
-        status: "Agendado",
+        status: "Aprovado",
     },
     {
         local: "Hemocentro B",
         data: "10/10/2025 14:00",
-        status: "Concluido",
+        status: "Reprovado",
     },
     {
         local: "Hemocentro C",
         data: "05/08/2025 08:00",
-        status: "Cancelado",
+        status: "Aprovado",
     },
 ];
 </script>
@@ -72,13 +70,14 @@ const data = [
                 <h1 class="poppins-bold">Olá, doador!</h1>
             </section>
             <section class="btn-hemocentro">
-                <CustomButton label="Buscar Hemocentro" @click="router.push({name: RouteNames.BUSCAR_HEMOCENTROS_DOADOR})"/>
+                <CustomButton label="Buscar Hemocentro"
+                    @click="router.push({ name: RouteNames.BUSCAR_HEMOCENTROS_DOADOR })" />
             </section>
         </header>
         <main>
             <div class="next-donation">
                 <div class="next-donation-title">
-                    <PhCalendarDots size="25"/>
+                    <PhCalendarDots size="25" />
                     <h2>Seu próximo agendamento</h2>
                 </div>
                 <p class="next-dotaion-info"><span>Data: </span>20/12/2025</p>
@@ -89,7 +88,6 @@ const data = [
                 <div class="last-dontaion-title">
                     <h2>Últimas Doações</h2>
                 </div>
-                <CustomInput label="Hemocentro" id="hemocentro" model-value="" placeholder="Pesquisar"/>
                 <Table :data="data" :columns="columns" :pageSize="pageSize" />
             </div>
         </main>
@@ -157,7 +155,6 @@ main {
 .last-donations {
     display: flex;
     flex-direction: column;
-    gap: 30px;
 
     border: 1px solid;
     border-color: var(--input-border-color);

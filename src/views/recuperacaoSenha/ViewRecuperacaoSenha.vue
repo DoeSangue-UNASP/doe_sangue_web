@@ -3,6 +3,12 @@ import { ref, computed } from 'vue';
 import EnviarEmail from './passos/EnviarEmail.vue';
 import VerificarCodigo from './passos/VerificarCodigo.vue';
 import CriarNovaSenha from './passos/CriarNovaSenha.vue';
+import { PhX } from '@phosphor-icons/vue';
+import IconButton from '../../components/IconButton.vue';
+import { useRouter } from 'vue-router';
+import { RouteNames } from '../../router/route-names';
+
+const router = useRouter();
 
 const step = ref(0);
 
@@ -29,6 +35,9 @@ const handleBack = () => {
             <img src="../../assets/logo-light.svg" alt="logo-doe-sangue" />
         </section>
         <section class="form">
+            <div class="btn-close">
+                <IconButton :icon="PhX" secondary @click="router.push({ name: RouteNames.LANDING_PAGE })" />
+            </div>
             <div class="title">
                 <h1 class="poppins-bold">Recuperação de Senha</h1>
             </div>
@@ -64,6 +73,7 @@ const handleBack = () => {
 }
 
 .form {
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -74,6 +84,13 @@ const handleBack = () => {
 
     border-radius: 0 40px 40px 0;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.btn-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
 }
 
 .title {
