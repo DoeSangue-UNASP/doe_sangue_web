@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { PhCaretLeft, PhCaretRight, PhFinnTheHuman, PhFunnel, PhPlus } from '@phosphor-icons/vue'
 

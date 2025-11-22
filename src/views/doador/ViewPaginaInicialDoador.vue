@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { PhCalendarDots, PhEye } from '@phosphor-icons/vue';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomInput from '../../components/CustomInput.vue';
