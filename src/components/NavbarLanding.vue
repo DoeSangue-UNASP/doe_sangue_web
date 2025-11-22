@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import CustomButton from './CustomButton.vue';
+import { RouteNames } from '../router/route-names';
 
 var router = useRouter();
 
@@ -12,13 +13,13 @@ const navegarPara = (nomeRota: string) => {
 
 <template>
     <nav class="poppins-regular">
-        <section class="logo">
+        <section class="logo" @click="navegarPara(RouteNames.LANDING_PAGE)">
             <img src="../assets/logo_vertical.svg" alt="logo-doe-sangue"/>
         </section>
         <section class="options">
             <div class="navbar-option" @click="navegarPara('sobre-nos')">Sobre Nós</div>
             <div class="navbar-option" @click="navegarPara('pontos-de-coleta')">Pontos de Coleta</div>
-            <div class="navbar-option" @click="navegarPara('requisitos')">Requisitos</div>
+            <div class="navbar-option" @click="navegarPara(RouteNames.REQUISITOS_DOACAO)">Requisitos</div>
             <div class="navbar-option" @click="navegarPara('requisitos')">Quiz de Aptidão</div>
             <CustomButton class="navbar-option btn-entrar" label="Entrar" @click="navegarPara('login')"/>
         </section>
@@ -46,6 +47,8 @@ nav {
     justify-content: flex-start;
     align-items: center;
     width: 40%;
+
+    cursor: pointer;
 }
 
 .options {

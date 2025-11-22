@@ -22,7 +22,7 @@ const close = () => {
             <div v-if="modelValue" class="dialog">
                 <header class="dialog-header">
                     <h2>
-                        <slot name="header">Título</slot>
+                        <slot name="header"></slot>
                     </h2>
                     <button class="close-btn" @click="close()">
                         <PhX size="25" />

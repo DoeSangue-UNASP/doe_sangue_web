@@ -5,8 +5,18 @@ import CustomButton from '../../components/CustomButton.vue';
 import NavbarLanding from '../../components/NavbarLanding.vue';
 import { useRouter } from 'vue-router';
 import { RouteNames } from '../../router/route-names';
+import CustomDialog from '../../components/CustomDialog.vue';
+import { ref } from 'vue';
+import CustomInput from '../../components/CustomInput.vue';
+import CustomTextarea from '../../components/CustomTextarea.vue';
 
 const router = useRouter();
+
+const open = ref<boolean>(false);
+
+const toggleModal = () => {
+    open.value = !open.value;
+};
 </script>
 
 <template>
@@ -36,11 +46,29 @@ const router = useRouter();
                     <p>Compartilhe sua experiência</p>
                     <p>Compartilhe sua experiência como doador ou receptor e incentive outras pessoas a fazerem a diferença. Sua história pode salvar vidas!</p>
 
-                    <CustomButton label="Compartilhe sua história!" secondary red-font-color />
+                    <CustomButton @click="toggleModal" label="Compartilhe sua história!" secondary red-font-color />
                 </div>
             </section>
         </main>
     </div>
+    <CustomDialog v-model="open">
+        <template #default>
+            <div class="header">
+                <PhHeart size="50" color="var(--primary-color)"/>
+                <span>Compartilhe sua experiência</span>
+                <p>Sua experiência pode inspirar outras pessoas a doarem sangue e salvarem vidas!</p>
+            </div>
+            <div class="form">
+                <CustomInput label="Nome" id="nome" model-value="" placeholder="Nome"/>
+                <div class="template-input-cidade-estado">
+                    <CustomInput class="input-width" label="Cidade" id="cidade" model-value="" placeholder="São Paulo"/>
+                    <CustomInput class="input-width" label="Estado" id="estado" model-value="" placeholder="SP"/>
+                </div>
+                <CustomTextarea label="Seu Depoimento" id="depoimento" model-value="" placeholder="depoimento..."/>
+                <CustomButton label="Enviar" @click="toggleModal"/>
+            </div>
+        </template>
+    </CustomDialog>
 </template>
 
 <style scoped>
@@ -120,5 +148,32 @@ const router = useRouter();
     max-width: 660px;
     gap: 20px;
     text-align: center;
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+
+    gap: 20px;
+}
+
+.template-input-cidade-estado {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+.input-width {
+    width: 50%;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 </style>
