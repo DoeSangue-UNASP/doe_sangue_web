@@ -35,7 +35,7 @@ const cadastrar = () => {
                 <CustomInput label="Senha" id="senha" :model-value="senha" placeholder="******" type="password"/>
                 <div class="form-button">
                     <CustomButton label="Entrar" @click="login()"/>
-                    <LinkButton label="Esqueci minha senha" route-name="esqueci-minha-senha"/>
+                    <LinkButton label="Esqueci minha senha" :route-name="RouteNames.RECUPERAR_SENHA"/>
                 </div>
             </div>
 

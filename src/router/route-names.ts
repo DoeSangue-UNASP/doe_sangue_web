@@ -1,6 +1,7 @@
 export const RouteNames = {
     LOGIN: "login",
     CADASTRAR: "cadastrar",
+    RECUPERAR_SENHA: "recuperar-senha" ,
 
     LANDING_PAGE: "landing-page",
     PONTOS_COLETA: "pontos-coleta",
