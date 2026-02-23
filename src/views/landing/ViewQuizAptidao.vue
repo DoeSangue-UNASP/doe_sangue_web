@@ -150,7 +150,7 @@ const startQuiz = () => {
     <main class="quiz-wrapper poppins-regular">
       <section v-if="!hasStarted && !finished" class="quiz-card intro-card">
         <h1 class="intro-title poppins-bold">Quiz de Aptidão para Doação</h1>
-        <p class="intro-text poppins-semibold">
+        <p class="intro-text poppins">
           Quer saber se você pode ser um doador de sangue?<br>
           Responda a algumas perguntas rápidas e descubra se você atende aos requisitos básicos para salvar vidas. <br>
           É rápido, fácil e o primeiro passo para fazer a diferença!
