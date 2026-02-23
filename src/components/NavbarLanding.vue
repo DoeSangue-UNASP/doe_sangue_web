@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import CustomButton from './CustomButton.vue';
 import { RouteNames } from '../router/route-names';
 
-var router = useRouter();
+const router = useRouter();
+const route = useRoute();
 
 const navegarPara = (nomeRota: string) => {
     router.push({ name: nomeRota });
-}
+};
+
+const isSelected = (nomeRota: string) => route.name === nomeRota;
 
 </script>
 
@@ -17,11 +20,15 @@ const navegarPara = (nomeRota: string) => {
             <img src="../assets/logo_vertical.svg" alt="logo-doe-sangue" />
         </section>
         <section class="options">
-            <div class="navbar-option" @click="navegarPara('sobre-nos')">Sobre Nós</div>
-            <div class="navbar-option" @click="navegarPara(RouteNames.PONTOS_COLETA)">Pontos de Coleta</div>
-            <div class="navbar-option" @click="navegarPara(RouteNames.REQUISITOS_DOACAO)">Requisitos</div>
-            <div class="navbar-option" @click="navegarPara('requisitos')">Quiz de Aptidão</div>
-            <CustomButton class="navbar-option btn-entrar" label="Entrar" @click="navegarPara('login')" />
+            <div class="navbar-option" :class="{ selected: isSelected(RouteNames.SOBRE_NOS) }"
+                @click="navegarPara(RouteNames.SOBRE_NOS)">Sobre Nós</div>
+            <div class="navbar-option" :class="{ selected: isSelected(RouteNames.PONTOS_COLETA) }"
+                @click="navegarPara(RouteNames.PONTOS_COLETA)">Pontos de Coleta</div>
+            <div class="navbar-option" :class="{ selected: isSelected(RouteNames.REQUISITOS_DOACAO) }"
+                @click="navegarPara(RouteNames.REQUISITOS_DOACAO)">Requisitos</div>
+            <div class="navbar-option" :class="{ selected: isSelected(RouteNames.QUIZ_APTIDAO) }"
+                @click="navegarPara(RouteNames.QUIZ_APTIDAO)">Quiz de Aptidão</div>
+            <CustomButton class="btn-entrar" label="Entrar" @click="navegarPara(RouteNames.LOGIN)" />
         </section>
     </nav>
 </template>
@@ -92,7 +99,16 @@ nav {
     transform: scaleX(1);
 }
 
+.options>div.navbar-option.selected {
+    color: var(--secondary-color);
+}
+
+.options>div.navbar-option.selected::after {
+    transform: scaleX(1);
+}
+
 .btn-entrar {
+    max-width: 200px;
     font-size: 18px;
 }
 </style>
