@@ -45,7 +45,7 @@ button:hover {
 }
 
 .btn-secondary:hover {
-    background-color: #e2e2e2;
+    background-color: var(--button-secondary-hover);
     color: var(--font-button-primary);
 }
 </style>

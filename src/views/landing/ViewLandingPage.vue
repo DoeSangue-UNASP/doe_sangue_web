@@ -21,30 +21,37 @@ const toggleModal = () => {
 
 <template>
     <div class="background">
-        <NavbarLanding/>
+        <NavbarLanding />
         <main class="view-landing">
             <section class="welcome">
                 <h1 class="poppins-regular">Olá! Somos o <span>Doe Sangue</span></h1>
-                <p>Conectamos doadores voluntários com hemocentros credenciados através de uma plataforma segura, moderna e eficiente, contribuindo para salvar vidas em todo o Brasil.</p>
+                <p>Conectamos doadores voluntários com hemocentros credenciados através de uma plataforma segura,
+                    moderna e eficiente, contribuindo para salvar vidas em todo o Brasil.</p>
                 <div class="welcome-buttons">
-                    <CustomButton @click="router.push({name: RouteNames.CADASTRAR})" label="Sou Hemocentro" secondary/>
-                    <CustomButton @click="router.push({name: RouteNames.CADASTRAR})" label="Quero Doar Sangue"/>
+                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR })" label="Sou Hemocentro"
+                        secondary />
+                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR })" label="Quero Doar Sangue" />
                 </div>
             </section>
-    
+
             <section class="depoimentos">
                 <h1 class="poppins-regular">Depoimentos</h1>
                 <p>Confira os depoimentos inspiradores de doadores e receptores de sangue!</p>
                 <div class="cards-depoimentos">
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP" depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros."/>
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP" depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros."/>
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP" depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros."/>
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP" depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros."/>
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
                 </div>
-                <div class="novo-depoimento">
-                    <PhHeart size="50"/>
-                    <p>Compartilhe sua experiência</p>
-                    <p>Compartilhe sua experiência como doador ou receptor e incentive outras pessoas a fazerem a diferença. Sua história pode salvar vidas!</p>
+                <div class="card-novo-depoimento">
+                    <PhHeart size="50" />
+                    <h1 class="card-novo-depoimento-title">Compartilhe sua experiência</h1>
+                    <p>Compartilhe sua experiência como doador ou receptor e incentive outras pessoas a fazerem a
+                        diferença. Sua história pode salvar vidas!</p>
 
                     <CustomButton @click="toggleModal" label="Compartilhe sua história!" secondary red-font-color />
                 </div>
@@ -53,19 +60,20 @@ const toggleModal = () => {
     </div>
     <CustomDialog v-model="open">
         <template #default>
-            <div class="header">
-                <PhHeart size="50" color="var(--primary-color)"/>
-                <span>Compartilhe sua experiência</span>
+            <div class="dialog-header">
+                <PhHeart size="50" color="var(--primary-color)" />
+                <h1 class="dialog-title">Compartilhe sua experiência</h1>
                 <p>Sua experiência pode inspirar outras pessoas a doarem sangue e salvarem vidas!</p>
             </div>
             <div class="form">
-                <CustomInput label="Nome" id="nome" model-value="" placeholder="Nome"/>
+                <CustomInput label="Nome" id="nome" model-value="" placeholder="Nome" />
                 <div class="template-input-cidade-estado">
-                    <CustomInput class="input-width" label="Cidade" id="cidade" model-value="" placeholder="São Paulo"/>
-                    <CustomInput class="input-width" label="Estado" id="estado" model-value="" placeholder="SP"/>
+                    <CustomInput class="input-width" label="Cidade" id="cidade" model-value=""
+                        placeholder="São Paulo" />
+                    <CustomInput class="input-width" label="Estado" id="estado" model-value="" placeholder="SP" />
                 </div>
-                <CustomTextarea label="Seu Depoimento" id="depoimento" model-value="" placeholder="depoimento..."/>
-                <CustomButton label="Enviar" @click="toggleModal"/>
+                <CustomTextarea label="Seu Depoimento" id="depoimento" model-value="" placeholder="depoimento..." />
+                <CustomButton label="Enviar" @click="toggleModal" />
             </div>
         </template>
     </CustomDialog>
@@ -135,7 +143,7 @@ const toggleModal = () => {
     flex-wrap: wrap;
 }
 
-.novo-depoimento {
+.card-novo-depoimento {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -150,7 +158,12 @@ const toggleModal = () => {
     text-align: center;
 }
 
-.header {
+.card-novo-depoimento-title {
+    font-weight: bold;
+    font-size: larger;
+}
+
+.dialog-header {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -159,6 +172,11 @@ const toggleModal = () => {
     text-align: center;
 
     gap: 20px;
+}
+
+.dialog-title {
+    font-weight: bold;
+    font-size: large;
 }
 
 .template-input-cidade-estado {

@@ -52,7 +52,6 @@ const close = () => {
 .dialog {
     display: flex;
     flex-direction: column;
-    gap: 20px;
 
     position: fixed;
     top: 50%;
@@ -61,7 +60,7 @@ const close = () => {
     background: white;
     width: 500px;
     border-radius: 12px;
-    padding: 16px;
+    padding: 30px;
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
     z-index: 999;
 }
@@ -73,6 +72,10 @@ const close = () => {
     margin-bottom: 12px;
 
     color: var(--secondary-color);
+}
+
+.dialog-footer {
+    margin-top: 10px;
 }
 
 .close-btn {

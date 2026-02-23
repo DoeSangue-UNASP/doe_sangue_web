@@ -17,38 +17,38 @@ const toggleModal = () => {
     </header>
     <div class="dados-pessoais">
         <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Nome Completo" id="nome-completo" placeholder=""/>
-            <CustomInput class="input2" label="Gênero" id="genero" placeholder=""/>
-        </div>
-        
-        <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Nome Social (opcional)" id="nome-social" placeholder=""/>
-            <CustomInput class="input2" label="CPF" id="cpf" placeholder=""/>
-        </div>
-        
-        <div class="template-dois-inputs">
-            <CustomInput label="Data de Nascimento" id="data-nascimento" placeholder=""/>
+            <CustomInput class="input1" label="Nome Completo" id="nome-completo" placeholder="" />
+            <CustomInput class="input2" label="Gênero" id="genero" placeholder="" />
         </div>
 
         <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Email" id="email" placeholder="" type="email"/>
-            <CustomInput class="input2" label="Telefone" id="telefone" placeholder=""/>
+            <CustomInput class="input1" label="Nome Social (opcional)" id="nome-social" placeholder="" />
+            <CustomInput class="input2" label="CPF" id="cpf" placeholder="" />
         </div>
-        
+
         <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Rua" id="rua" placeholder=""/>
-            <CustomInput class="input2" label="Número" id="numero" placeholder=""/>
+            <CustomInput label="Data de Nascimento" id="data-nascimento" placeholder="" />
+        </div>
+
+        <div class="template-dois-inputs">
+            <CustomInput class="input1" label="Email" id="email" placeholder="" type="email" />
+            <CustomInput class="input2" label="Telefone" id="telefone" placeholder="" />
+        </div>
+
+        <div class="template-dois-inputs">
+            <CustomInput class="input1" label="Rua" id="rua" placeholder="" />
+            <CustomInput class="input2" label="Número" id="numero" placeholder="" />
         </div>
 
         <div class="template-endereco">
-            <CustomInput class="cep" label="CEP" id="cep" placeholder=""/>
-            <CustomInput class="bairro" label="Bairro" id="bairro" placeholder=""/>
-            <CustomInput class="cidade" label="Cidade" id="cidade" placeholder=""/>
-            <CustomInput class="estado" label="Estado" id="estado" placeholder=""/>
+            <CustomInput class="cep" label="CEP" id="cep" placeholder="" />
+            <CustomInput class="bairro" label="Bairro" id="bairro" placeholder="" />
+            <CustomInput class="cidade" label="Cidade" id="cidade" placeholder="" />
+            <CustomInput class="estado" label="Estado" id="estado" placeholder="" />
         </div>
-        
+
         <div class="save-btn">
-            <CustomButton @click="toggleModal" label="Salvar"/>
+            <CustomButton @click="toggleModal" label="Salvar" />
         </div>
     </div>
 
@@ -60,7 +60,7 @@ const toggleModal = () => {
             Seus dados foram salvos com sucesso!
         </template>
         <template #footer>
-            <CustomButton label="OK" @click="toggleModal"/>
+            <CustomButton label="OK" @click="toggleModal" />
         </template>
     </CustomDialog>
 </template>
@@ -118,6 +118,7 @@ const toggleModal = () => {
     display: flex;
     justify-content: flex-end;
     width: 100%;
+    margin: auto;
 }
 
 .save-btn button {

@@ -44,7 +44,7 @@ defineProps<{
         <p>{{ hemocentro?.endereco }}</p>
       </SkeletonBlock>
       <SkeletonBlock :is-loading="isLoading" width="45px" height="45px" border-radius="8px">
-        <IconButton :icon="PhTrafficSign" secondary :click="onRouteClick" />
+        <IconButton :icon="PhTrafficSign" :click="onRouteClick" />
       </SkeletonBlock>
     </div>
   </div>

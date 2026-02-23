@@ -12,13 +12,7 @@ const modelValue = defineModel<string>()
 <template>
     <div class="textarea-container poppins-regular">
         <label :for="id">{{ label }}</label>
-        <textarea 
-            class="poppins-regular" 
-            :id="id" 
-            placeholder="Mensagem aqui"
-            :rows="rows ?? 4"
-            v-model="modelValue" 
-        />
+        <textarea class="poppins-regular" :id="id" placeholder="Mensagem aqui" :rows="rows ?? 4" v-model="modelValue" />
     </div>
 </template>
 
@@ -38,12 +32,13 @@ const modelValue = defineModel<string>()
     border: 1px solid;
     border-color: var(--input-border-color);
     padding: 12px 16px;
-    
+
     font-family: inherit;
     font-size: inherit;
 }
 
 .textarea-container textarea:focus {
     outline: none;
+    border-color: var(--primary-color);
 }
 </style>

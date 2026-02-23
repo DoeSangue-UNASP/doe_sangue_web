@@ -287,6 +287,7 @@ main {
 }
 
 .hemocentro-item:hover {
+    background-color: var(--button-secondary-hover);
     border-color: var(--input-border-color);
 }
 

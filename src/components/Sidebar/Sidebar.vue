@@ -25,8 +25,8 @@ const toggleModal = () => {
             <slot></slot>
         </section>
         <section class="config-logout">
-            <SidebarOption :icon="PhGear" label="Configurações" route=""/>
-            <SidebarOption @click="toggleModal" :icon="PhSignOut" label="Sair" route=""/>
+            <SidebarOption :icon="PhGear" label="Configurações" route="" />
+            <SidebarOption @click="toggleModal" :icon="PhSignOut" label="Sair" route="" />
         </section>
     </div>
 
@@ -39,8 +39,8 @@ const toggleModal = () => {
         </template>
         <template #footer>
             <div class="modal-footer">
-                <CustomButton label="Cancelar" secondary @click="toggleModal"/>
-                <CustomButton label="Confirmar" @click="router.push({name: RouteNames.LOGIN})"/>
+                <CustomButton label="Cancelar" secondary @click="toggleModal" />
+                <CustomButton label="Confirmar" @click="router.push({ name: RouteNames.LOGIN })" />
             </div>
         </template>
     </CustomDialog>
