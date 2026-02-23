@@ -9,18 +9,14 @@ import type { EventInput } from '@fullcalendar/core/index.js'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import IconButton from '../../components/IconButton.vue'
 import CustomInput from '../../components/CustomInput.vue'
-import { PhFunnel, PhMagnifyingGlass, PhPlus } from '@phosphor-icons/vue'
+import { PhFunnel, PhMagnifyingGlass, PhPlus, PhX } from '@phosphor-icons/vue'
 import CustomDialog from '../../components/CustomDialog.vue'
 import CustomButton from '../../components/CustomButton.vue'
 import CustomDatePicker from '../../components/CustomDatePicker.vue'
 import CustomDropdown from '../../components/CustomDropdown.vue'
 
-const open = ref<boolean>(false);
-
-const toggleModal = () => {
-  open.value = !open.value;
-};
-
+const openCriarAgendamento = ref<boolean>(false);
+const openCancelarAgendamento = ref<boolean>(false);
 const showingInput = ref(false)
 const filter = ref('')
 const selectedTime = ref('')
@@ -38,6 +34,14 @@ const timeOptions = [
   '15:00',
   '16:00'
 ]
+
+const toggleModalCriarAgendamento = () => {
+  openCriarAgendamento.value = !openCriarAgendamento.value;
+};
+
+const toggleModalCancelarAgendamento = () => {
+  openCancelarAgendamento.value = !openCancelarAgendamento.value;
+}
 
 const toggleInput = () => {
   showingInput.value = !showingInput.value
@@ -61,6 +65,7 @@ const handleTimeDropdownOpenChange = (value: boolean) => {
 
 const events = ref<EventInput[]>([
   {
+    id: '1',
     title: 'Joe Doe',
     start: '2026-02-23T08:00:00',
     end: '2026-02-23T08:40:00',
@@ -69,6 +74,7 @@ const events = ref<EventInput[]>([
     }
   },
   {
+    id: '2',
     title: 'Joe Doe',
     start: '2026-02-23T09:00:00',
     end: '2026-02-23T09:40:00',
@@ -77,6 +83,7 @@ const events = ref<EventInput[]>([
     }
   },
   {
+    id: '3',
     title: 'Joe Doe',
     start: '2026-02-23T11:00:00',
     end: '2026-02-23T11:40:00',
@@ -85,6 +92,7 @@ const events = ref<EventInput[]>([
     }
   },
   {
+    id: '4',
     title: 'Joe Doe',
     start: '2026-02-24T12:00:00',
     end: '2026-02-24T12:40:00',
@@ -93,6 +101,7 @@ const events = ref<EventInput[]>([
     }
   },
   {
+    id: '5',
     title: 'Joe Doe',
     start: '2026-02-25T09:00:00',
     end: '2026-02-25T09:40:00',
@@ -150,14 +159,7 @@ const calendarOptions = computed(() => ({
   nowIndicator: true,
   editable: true,
   dayHeaderFormat: { weekday: 'long' as const },
-  events: filteredEvents.value,
-  eventContent: (info: { event: { title: string; extendedProps: { cpf?: string } } }) => {
-    const cpf = info.event.extendedProps?.cpf
-
-    return {
-      html: `<div class="event-content"><p class="event-title">${info.event.title}</p>${cpf ? `<p class="event-subtitle">${cpf}</p>` : ''}</div>`
-    }
-  }
+  events: filteredEvents.value
 }))
 </script>
 
@@ -167,7 +169,7 @@ const calendarOptions = computed(() => ({
       <h1>Agendamentos</h1>
 
       <div class="header-actions">
-        <IconButton :icon="PhPlus" @click="toggleModal" />
+        <IconButton :icon="PhPlus" @click="toggleModalCriarAgendamento" />
         <IconButton :icon="PhFunnel" secondary @click="toggleInput" />
 
         <transition name="fade">
@@ -180,11 +182,22 @@ const calendarOptions = computed(() => ({
     </header>
 
     <main class="calendar-container">
-      <FullCalendar :options="calendarOptions" />
+      <FullCalendar :options="calendarOptions">
+        <template #eventContent="arg">
+          <div class="event-content">
+            <button type="button" class="event-cancel-btn" aria-label="Cancelar agendamento"
+              @click.stop.prevent="toggleModalCancelarAgendamento">
+              <PhX :size="12" weight="bold" />
+            </button>
+            <p class="event-title">{{ arg.event.title }}</p>
+            <p v-if="arg.event.extendedProps?.cpf" class="event-subtitle">{{ arg.event.extendedProps?.cpf }}</p>
+          </div>
+        </template>
+      </FullCalendar>
     </main>
   </div>
 
-  <CustomDialog v-model="open" width="760px">
+  <CustomDialog v-model="openCriarAgendamento" width="760px">
     <template #header>
       Criar Agendamento
     </template>
@@ -211,7 +224,20 @@ const calendarOptions = computed(() => ({
     </template>
     <template #footer>
       <div class="modal-footer">
-        <CustomButton label="Salvar" />
+        <CustomButton class="modal-content-btn" label="Salvar" />
+      </div>
+    </template>
+  </CustomDialog>
+
+  <CustomDialog v-model="openCancelarAgendamento">
+    <template #header>Confirmação de Cancelamento</template>
+    <template #default>
+      <p>Tem certeza que deseja cancelar o agendamento?</p>
+    </template>
+    <template #footer>
+      <div class="modal-footer">
+        <CustomButton class="modal-content-btn" label="Cancelar" secondary />
+        <CustomButton class="modal-content-btn" label="Confirmar" />
       </div>
     </template>
   </CustomDialog>
@@ -380,6 +406,36 @@ const calendarOptions = computed(() => ({
   overflow: hidden;
 }
 
+.calendar-container :deep(.event-content) {
+  position: relative;
+}
+
+.calendar-container :deep(.event-cancel-btn) {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  background-color: var(--secondary-color);
+  color: var(--button-secondary);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.calendar-container :deep(.fc .fc-timegrid-event:hover .event-cancel-btn) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .calendar-container :deep(.fc .fc-event-main)::before {
   content: "";
   position: absolute;
@@ -460,7 +516,10 @@ const calendarOptions = computed(() => ({
 }
 
 .modal-footer {
-  max-width: 160px;
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
 }
 </style>
