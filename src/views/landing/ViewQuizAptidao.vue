@@ -81,6 +81,7 @@ const quiz = [
 const currentStep = ref(0);
 const selectedAnswers = ref<Record<number, number | undefined>>({});
 const finished = ref(false);
+const hasStarted = ref(false);
 
 const totalSteps = quiz.length;
 const firstQuestion = quiz[0]!;
@@ -133,6 +134,13 @@ const restartQuiz = () => {
   selectedAnswers.value = {};
   finished.value = false;
 };
+
+const startQuiz = () => {
+  currentStep.value = 0;
+  selectedAnswers.value = {};
+  finished.value = false;
+  hasStarted.value = true;
+};
 </script>
 
 <template>
@@ -140,7 +148,19 @@ const restartQuiz = () => {
     <NavbarLanding />
 
     <main class="quiz-wrapper poppins-regular">
-      <section v-if="!finished" class="quiz-card">
+      <section v-if="!hasStarted && !finished" class="quiz-card intro-card">
+        <h1 class="intro-title poppins-bold">Quiz de Aptidão para Doação</h1>
+        <p class="intro-text poppins-semibold">
+          Quer saber se você pode ser um doador de sangue?<br>
+          Responda a algumas perguntas rápidas e descubra se você atende aos requisitos básicos para salvar vidas. <br>
+          É rápido, fácil e o primeiro passo para fazer a diferença!
+          <br><br>
+          Este quiz não substitui a triagem médica completa, mas ajuda a verificar os critérios iniciais de doação.
+        </p>
+        <CustomButton class="intro-button" label="Iniciar Quiz" @click="startQuiz" />
+      </section>
+
+      <section v-else-if="!finished" class="quiz-card">
         <header class="quiz-header">
           <h1 class="quiz-title poppins-bold">Quiz Rápido</h1>
           <span class="quiz-step poppins-semibold">Pergunta {{ currentStep + 1 }} de {{ totalSteps }}</span>
@@ -215,6 +235,31 @@ const restartQuiz = () => {
   border: 1px solid var(--input-border-color);
   border-radius: 12px;
   padding: 40px 48px;
+}
+
+.intro-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 30px;
+}
+
+.intro-title {
+  width: 100%;
+  color: var(--font-color);
+  font-size: x-large;
+}
+
+.intro-text {
+  width: 100%;
+  color: var(--font-light-color);
+}
+
+.intro-button {
+  width: 100%;
+  max-width: 180px;
 }
 
 .quiz-header {
@@ -336,6 +381,20 @@ const restartQuiz = () => {
 @media (max-width: 1024px) {
   .quiz-card {
     padding: 32px 28px;
+  }
+
+  .intro-card {
+    min-height: auto;
+    gap: 22px;
+    text-align: center;
+  }
+
+  .intro-title {
+    max-width: 100%;
+  }
+
+  .intro-text {
+    max-width: 100%;
   }
 
   .progress-track {
