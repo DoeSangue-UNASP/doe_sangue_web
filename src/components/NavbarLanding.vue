@@ -40,6 +40,7 @@ nav {
 
     padding: 0 30px;
     top: 0;
+    z-index: 1000;
 }
 
 .logo {

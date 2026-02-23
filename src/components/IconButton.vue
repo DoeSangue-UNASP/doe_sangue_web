@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-    <button :class="{ 'btn-secondary': secondary }" class="poppins-medium">
+    <button :class="{ 'btn-secondary': secondary }" class="poppins-medium" type="button" @click="click?.()">
         <component :is="icon" size="25" :color="secondary ? 'var(--primary-color)' : 'var(--font-button-primary)'" />
     </button>
 </template>

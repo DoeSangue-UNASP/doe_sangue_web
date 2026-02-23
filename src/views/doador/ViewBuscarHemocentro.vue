@@ -1,20 +1,133 @@
 <script setup lang="ts">
-import { PhDropSimple, PhMapPin, PhTrafficSign } from '@phosphor-icons/vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { PhCaretLeft, PhCaretRight } from '@phosphor-icons/vue';
+import HemocentroCard from '../../components/HemocentroCard.vue';
+import HemocentroInteractiveMap from '../../components/HemocentroInteractiveMap.vue';
+import HemocentroMapPanel from '../../components/HemocentroMapPanel.vue';
 import IconButton from '../../components/IconButton.vue';
+import { buscarHemocentrosProximos } from '../../services/osm';
+import type { Coordenada, HemocentroProximo } from '../../types/hemocentro';
 
+const hemocentros = ref<HemocentroProximo[]>([]);
+const isLoading = ref(true);
+const skeletonCards = [1, 2, 3];
+const locationDenied = ref(false);
+const errorMessage = ref('');
+const coordenadaUsuario = ref<Coordenada | null>(null);
+const hemocentroSelecionadoId = ref<string | null>(null);
+const focusSelectionToken = ref(0);
+const itensPorPagina = 3;
+const paginaAtual = ref(1);
 
-const hemocentros = [
-    {
-        nomeHemocentro: "Hemocentro A",
-        tipo: "Banco de Sangue",
-        endereco: "Rua tal 123, Bairro tal, Cidade tal - SP"
-    },
-    {
-        nomeHemocentro: "Hemocentro A",
-        tipo: "Banco de Sangue",
-        endereco: "Rua tal 123, Bairro tal, Cidade tal - SP"
+const totalPaginas = computed(() => {
+    if (!hemocentros.value.length) {
+        return 1;
     }
-];
+
+    return Math.ceil(hemocentros.value.length / itensPorPagina);
+});
+
+const hemocentrosPaginados = computed(() => {
+    const inicio = (paginaAtual.value - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    return hemocentros.value.slice(inicio, fim);
+});
+
+const mensagemSemPermissao =
+    'Não foi possível localizar os pontos de coletas próximos, requer a permissão de localização';
+
+const obterGeolocalizacao = (): Promise<GeolocationPosition> => {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocalização não suportada pelo navegador'));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        });
+    });
+};
+
+const carregarPontosProximos = async () => {
+    isLoading.value = true;
+    locationDenied.value = false;
+    errorMessage.value = '';
+    coordenadaUsuario.value = null;
+
+    try {
+        const posicao = await obterGeolocalizacao();
+
+        coordenadaUsuario.value = {
+            latitude: posicao.coords.latitude,
+            longitude: posicao.coords.longitude
+        };
+
+        hemocentros.value = await buscarHemocentrosProximos({
+            latitude: posicao.coords.latitude,
+            longitude: posicao.coords.longitude
+        });
+    } catch (error: unknown) {
+        if (error instanceof GeolocationPositionError && error.code === error.PERMISSION_DENIED) {
+            locationDenied.value = true;
+            hemocentros.value = [];
+            coordenadaUsuario.value = null;
+            return;
+        }
+
+        errorMessage.value = 'Não foi possível carregar os hemocentros próximos no momento.';
+        hemocentros.value = [];
+        coordenadaUsuario.value = null;
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const abrirRotaNoOpenStreetMap = (hemocentro: HemocentroProximo) => {
+    if (!coordenadaUsuario.value) {
+        return;
+    }
+
+    const origem = `${coordenadaUsuario.value.latitude},${coordenadaUsuario.value.longitude}`;
+    const destino = `${hemocentro.latitude},${hemocentro.longitude}`;
+    const rotaUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${encodeURIComponent(`${origem};${destino}`)}`;
+
+    window.open(rotaUrl, '_blank', 'noopener,noreferrer');
+};
+
+const selecionarHemocentro = (id: string) => {
+    hemocentroSelecionadoId.value = id;
+    focusSelectionToken.value += 1;
+};
+
+const irParaPaginaAnterior = () => {
+    if (paginaAtual.value > 1) {
+        hemocentroSelecionadoId.value = null;
+        paginaAtual.value -= 1;
+    }
+};
+
+const irParaProximaPagina = () => {
+    if (paginaAtual.value < totalPaginas.value) {
+        hemocentroSelecionadoId.value = null;
+        paginaAtual.value += 1;
+    }
+};
+
+watch(hemocentros, () => {
+    paginaAtual.value = 1;
+    hemocentroSelecionadoId.value = null;
+});
+
+watch(hemocentrosPaginados, () => {
+    hemocentroSelecionadoId.value = null;
+});
+
+onMounted(() => {
+    carregarPontosProximos();
+});
 </script>
 
 <template>
@@ -22,24 +135,51 @@ const hemocentros = [
         <header class="title">
             <h1>Buscar Hemocentros</h1>
         </header>
+
+        <p v-if="locationDenied" class="location-warning">{{ mensagemSemPermissao }}</p>
+
         <main>
-            <section class="hemocentros">
-                <div class="card-hemocentro" v-for="hemocentro in hemocentros" :key="hemocentro.nomeHemocentro">
-                    <div class="nome-hemocentro">
-                        <PhDropSimple size="25" color="var(--primary-color)"/>
-                        <p>{{ hemocentro.nomeHemocentro }}</p>
+            <section v-if="!locationDenied" class="hemocentros">
+                <HemocentroCard v-for="item in skeletonCards" v-show="isLoading" :key="`skeleton-${item}`" is-loading />
+
+                <div v-for="hemocentro in hemocentrosPaginados" v-show="!isLoading" :key="hemocentro.id"
+                    class="hemocentro-item" :class="{ selected: hemocentroSelecionadoId === hemocentro.id }"
+                    @click="selecionarHemocentro(hemocentro.id)">
+                    <HemocentroCard :hemocentro="hemocentro" :is-loading="isLoading"
+                        :on-route-click="() => abrirRotaNoOpenStreetMap(hemocentro)" />
+                </div>
+
+                <div v-if="!isLoading && hemocentros.length" class="pagination-footer">
+                    <div class="pagination-info">
+                        <div class="total-by-page">
+                            {{ hemocentrosPaginados.length }}
+                        </div>
+                        resultados por página
                     </div>
-                    <div class="tipo">{{ hemocentro.tipo }}</div>
-                    <div class="endereco">
-                        <PhMapPin size="25"/>
-                        <p>{{ hemocentro.endereco }}</p>
-                        <IconButton :icon="PhTrafficSign" secondary/>
+
+                    <div class="pagination-actions">
+                        <IconButton class="btn" :icon="PhCaretLeft" secondary :disabled="paginaAtual === 1"
+                            :click="irParaPaginaAnterior" />
+                        <IconButton class="btn" :icon="PhCaretRight" secondary :disabled="paginaAtual === totalPaginas"
+                            :click="irParaProximaPagina" />
                     </div>
                 </div>
+
+                <p v-if="!isLoading && !hemocentros.length && !errorMessage" class="empty-message">
+                    Não encontramos pontos de coleta em um raio de 15 km da sua localização.
+                </p>
+
+                <p v-if="!isLoading && errorMessage" class="error-message">
+                    {{ errorMessage }}
+                </p>
             </section>
-            <section class="map">
-    
-            </section>
+
+            <HemocentroMapPanel v-if="!locationDenied" :is-loading="isLoading">
+                <HemocentroInteractiveMap v-if="coordenadaUsuario" :user-location="coordenadaUsuario"
+                    :points="hemocentrosPaginados" :selected-point-id="hemocentroSelecionadoId"
+                    :focus-selection-token="focusSelectionToken" @select-point="selecionarHemocentro" />
+                <div v-else class="map-empty">Não foi possível exibir o mapa no momento.</div>
+            </HemocentroMapPanel>
         </main>
     </div>
 </template>
@@ -63,43 +203,85 @@ main {
     gap: 35px;
 }
 
+.location-warning {
+    color: var(--secondary-color);
+    margin-bottom: 20px;
+}
+
 .hemocentros {
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    justify-content: flex-start;
+    gap: 20px;
 
     border: 1px solid;
     border-color: var(--input-border-color);
     height: 100%;
     border-radius: 16px;
-    padding: 20px;
+    padding: 20px 20px 15px 20px;
     width: 45%;
 }
 
-.nome-hemocentro {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 10px;
-}
-
-.endereco {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-}
-
-.card-hemocentro {
-    display: flex;
-    flex-direction: column;
+.empty-message,
+.error-message {
+    color: var(--font-color);
     text-align: center;
+}
+
+.pagination-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+    justify-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.pagination-actions {
+    display: flex;
     gap: 10px;
 }
 
-.map {
-    background-color: lightgray;
+.total-by-page {
+    border: solid 1px;
+    border-color: #E0E0E0;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hemocentro-item {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.hemocentro-item:hover {
+    border-color: var(--input-border-color);
+}
+
+.hemocentro-item.selected {
+    border-color: var(--primary-color);
+}
+
+.map-empty {
     width: 100%;
-    border-radius: 16px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--font-color);
 }
 </style>
