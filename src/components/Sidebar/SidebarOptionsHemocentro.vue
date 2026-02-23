@@ -15,8 +15,8 @@ const route = useRoute();
         :route="RouteNames.DOADORES_HEMOCENTRO_LISTAR" />
     <SidebarOption :icon="PhCardsThree" label="Banco de Sangue"
         :selected="route.name === RouteNames.BOLSAS_SANGUE_HEMOCENTRO" :route="RouteNames.BOLSAS_SANGUE_HEMOCENTRO" />
-    <SidebarOption :icon="PhClockUser" label="Agendamentos" :selected="route.name === 'hemocentro-agendamentos'"
-        route="" />
+    <SidebarOption :icon="PhClockUser" label="Agendamentos"
+        :selected="route.name === RouteNames.AGENDAMENTOS_HEMOCENTRO" :route="RouteNames.AGENDAMENTOS_HEMOCENTRO" />
 </template>
 
 <style scoped></style>

@@ -1,0 +1,404 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import FullCalendar from '@fullcalendar/vue3'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
+import listPlugin from '@fullcalendar/list'
+import type { EventInput } from '@fullcalendar/core/index.js'
+import ptBrLocale from '@fullcalendar/core/locales/pt-br'
+import IconButton from '../../components/IconButton.vue'
+import CustomInput from '../../components/CustomInput.vue'
+import { PhFunnel, PhMagnifyingGlass, PhPlus } from '@phosphor-icons/vue'
+import CustomDialog from '../../components/CustomDialog.vue'
+import CustomButton from '../../components/CustomButton.vue'
+
+const open = ref<boolean>(false);
+
+const toggleModal = () => {
+  open.value = !open.value;
+};
+
+const showingInput = ref(false)
+const filter = ref('')
+
+const toggleInput = () => {
+  showingInput.value = !showingInput.value
+}
+
+const events = ref<EventInput[]>([
+  {
+    title: 'Joe Doe',
+    start: '2026-02-23T08:00:00',
+    end: '2026-02-23T08:40:00',
+    extendedProps: {
+      cpf: '123.567.890-12'
+    }
+  },
+  {
+    title: 'Joe Doe',
+    start: '2026-02-23T09:00:00',
+    end: '2026-02-23T09:40:00',
+    extendedProps: {
+      cpf: '123.567.890-12'
+    }
+  },
+  {
+    title: 'Joe Doe',
+    start: '2026-02-23T11:00:00',
+    end: '2026-02-23T11:40:00',
+    extendedProps: {
+      cpf: '123.567.890-12'
+    }
+  },
+  {
+    title: 'Joe Doe',
+    start: '2026-02-24T12:00:00',
+    end: '2026-02-24T12:40:00',
+    extendedProps: {
+      cpf: '123.567.890-12'
+    }
+  },
+  {
+    title: 'Joe Doe',
+    start: '2026-02-25T09:00:00',
+    end: '2026-02-25T09:40:00',
+    extendedProps: {
+      cpf: '123.567.890-12'
+    }
+  }
+])
+
+const filteredEvents = computed(() => {
+  const currentFilter = filter.value.trim().toLowerCase()
+
+  if (!currentFilter) {
+    return events.value
+  }
+
+  return events.value.filter((event) => {
+    const title = String(event.title ?? '').toLowerCase()
+    const cpf = String(event.extendedProps?.cpf ?? '').toLowerCase()
+
+    return (
+      title.includes(currentFilter)
+      || cpf.includes(currentFilter)
+    )
+  })
+})
+
+const calendarOptions = computed(() => ({
+  plugins: [
+    dayGridPlugin,
+    timeGridPlugin,
+    interactionPlugin,
+    listPlugin
+  ],
+  initialView: 'timeGridWeek',
+  locale: ptBrLocale,
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+  },
+  buttonText: {
+    today: 'Hoje',
+    month: 'Mês',
+    week: 'Semana',
+    day: 'Dia',
+    list: 'Lista'
+  },
+  allDaySlot: false,
+  weekends: false,
+  slotMinTime: '08:00:00',
+  slotMaxTime: '17:00:00',
+  slotDuration: '01:00:00',
+  eventMinHeight: 52,
+  nowIndicator: true,
+  editable: true,
+  dayHeaderFormat: { weekday: 'long' as const },
+  events: filteredEvents.value,
+  eventContent: (info: { event: { title: string; extendedProps: { cpf?: string } } }) => {
+    const cpf = info.event.extendedProps?.cpf
+
+    return {
+      html: `<div class="event-content"><p class="event-title">${info.event.title}</p>${cpf ? `<p class="event-subtitle">${cpf}</p>` : ''}</div>`
+    }
+  }
+}))
+</script>
+
+<template>
+  <div class="view-container">
+    <header class="header">
+      <h1>Agendamentos</h1>
+
+      <div class="header-actions">
+        <IconButton :icon="PhPlus" @click="toggleModal" />
+        <IconButton :icon="PhFunnel" secondary @click="toggleInput" />
+
+        <transition name="fade">
+          <div v-if="showingInput" class="filter-input">
+            <CustomInput id="filtrar-agendamentos" label="Pesquisar" placeholder="Pesquisar doador ou CPF"
+              v-model="filter" />
+          </div>
+        </transition>
+      </div>
+    </header>
+
+    <main class="calendar-container">
+      <FullCalendar :options="calendarOptions" />
+    </main>
+  </div>
+
+  <CustomDialog v-model="open">
+    <template #header>
+      Criar Agendamento
+    </template>
+    <template #default>
+      <div class="modal-content-actions">
+        <CustomInput class="modal-content-input" label="Pesquisar Doador" id="pesquisar-doador"
+          placeholder="Pesquisar doador ou CPF" />
+        <div class="modal-content-btns">
+          <IconButton :icon="PhMagnifyingGlass" />
+          <CustomButton class="modal-content-btn" secondary red-font-color label="Cadastrar doador" />
+        </div>
+
+        <div></div>
+      </div>
+    </template>
+    <template #footer>
+      <div class="modal-footer">
+        <CustomButton label="Salvar" />
+      </div>
+    </template>
+  </CustomDialog>
+</template>
+
+<style scoped>
+.view-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 45px;
+}
+
+.filter-input {
+  width: 260px;
+}
+
+.filter-input :deep(label) {
+  display: none;
+}
+
+.calendar-container {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.calendar-container :deep(.fc) {
+  height: 100%;
+  --fc-today-bg-color: color-mix(in srgb, var(--secondary-color) 4%, white);
+  --fc-now-indicator-color: var(--primary-color);
+}
+
+.calendar-container :deep(.fc .fc-day-today) {
+  background-color: var(--fc-today-bg-color) !important;
+}
+
+.calendar-container :deep(.fc .fc-timegrid-now-indicator-line) {
+  border-top-width: 3px;
+}
+
+.calendar-container :deep(.fc .fc-timegrid-now-indicator-arrow) {
+  border-top-width: 7px;
+  border-bottom-width: 7px;
+  border-left-width: 10px;
+}
+
+.calendar-container :deep(.fc-scrollgrid) {
+  border-radius: 8px;
+}
+
+.calendar-container :deep(.fc .fc-toolbar) {
+  gap: 10px;
+}
+
+.calendar-container :deep(.fc .fc-toolbar-chunk) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-container :deep(.fc .fc-toolbar-chunk:first-child) {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.calendar-container :deep(.fc .fc-toolbar-title) {
+  font-size: medium;
+  color: var(--font-light-color);
+}
+
+.calendar-container :deep(.fc .fc-button-group) {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-container :deep(.fc .fc-button-group > .fc-button) {
+  border-radius: 8px;
+}
+
+.calendar-container :deep(.fc .fc-button-primary) {
+  height: 45px;
+  border-radius: 8px;
+  border: 1px solid var(--font-color);
+  background-color: var(--button-secondary);
+  color: var(--font-color);
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  text-transform: none;
+  box-shadow: none;
+  transition: 0.25s ease;
+}
+
+.calendar-container :deep(.fc .fc-button-primary:hover) {
+  background-color: var(--button-secondary-hover);
+  color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.calendar-container :deep(.fc .fc-button-primary:focus) {
+  box-shadow: none;
+}
+
+.calendar-container :deep(.fc .fc-button-primary.fc-button-active) {
+  background-color: var(--secondary-color);
+  color: var(--button-secondary-hover);
+  border: none;
+}
+
+.calendar-container :deep(.fc .fc-button-primary:disabled) {
+  opacity: 0.5;
+}
+
+.calendar-container :deep(.fc .fc-timegrid-axis-cushion),
+.calendar-container :deep(.fc .fc-timegrid-slot-label-cushion) {
+  font-size: 12px;
+  color: var(--font-color);
+}
+
+.calendar-container :deep(.fc .fc-col-header-cell-cushion) {
+  font-size: 12px;
+  color: var(--font-color);
+  text-transform: capitalize;
+  padding: 12px 0;
+}
+
+.calendar-container :deep(.fc .fc-timegrid-slot) {
+  height: 52px;
+}
+
+.calendar-container :deep(.fc .fc-timegrid-event) {
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--secondary-color) 30%, white)
+}
+
+.calendar-container :deep(.fc .fc-event-main) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  border-radius: 8px;
+  padding: 4px 8px 4px 24px;
+  overflow: hidden;
+}
+
+.calendar-container :deep(.fc .fc-event-main)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  background-color: var(--secondary-color);
+}
+
+.calendar-container :deep(.fc .fc-event-time) {
+  display: none;
+}
+
+.calendar-container :deep(.event-title) {
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--font-color);
+}
+
+.calendar-container :deep(.event-subtitle) {
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--font-color);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.modal-content-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px
+}
+
+.modal-content-input {
+  width: 250px;
+}
+
+.modal-content-btns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: auto;
+}
+
+.modal-content-btn {
+  width: 150px;
+}
+
+.modal-footer {
+  max-width: 160px;
+  margin-left: auto;
+}
+</style>

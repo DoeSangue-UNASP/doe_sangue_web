@@ -47,6 +47,7 @@ const close = () => {
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
+    z-index: 2000;
 }
 
 .dialog {
@@ -62,7 +63,7 @@ const close = () => {
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
-    z-index: 999;
+    z-index: 2001;
 }
 
 .dialog-header {
