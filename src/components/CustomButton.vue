@@ -3,13 +3,15 @@ defineProps<{
     label: string;
     click?: () => void;
     secondary?: boolean;
+    keepSelected?: boolean;
     redFontColor?: boolean;
     icon?: string;
 }>();
 </script>
 
 <template>
-    <button @click="click" :class="{ 'btn-secondary': secondary, 'red-font-color': redFontColor }"
+    <button @click="click"
+        :class="{ 'btn-secondary': secondary, 'btn-keep-selected': keepSelected, 'red-font-color': redFontColor }"
         class="poppins-medium btn-container">
         <span v-if="icon" class="icon-wrapper">
             <component :is="icon" size="20" />
@@ -55,6 +57,11 @@ button:hover {
     border: 1px solid var(--primary-color);
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
     transform: translateY(-1px);
+}
+
+.btn-secondary.btn-keep-selected {
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
 }
 
 .red-font-color {

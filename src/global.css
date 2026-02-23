@@ -4,6 +4,7 @@
     --background-color: #FFF9F9;
     --form-color: #FFFFFF;
     --font-color: #2C2C2C;
+    --font-light-color: #7e7e7e;
 
     --button-primary: #B20000;
     --button-secondary: #FFFFFF;
@@ -12,6 +13,8 @@
     --font-button-primary: #FFFFFF;
 
     --input-border-color: #D9D9D9;
+
+    --success-color: #31BF67;
 
     font-family: "Poppins", sans-serif;
 

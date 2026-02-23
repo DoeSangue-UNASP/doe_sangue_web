@@ -9,6 +9,7 @@ const simpleViews = [
     RouteNames.LOGIN,
     RouteNames.CADASTRAR,
     RouteNames.REQUISITOS_DOACAO,
+    RouteNames.QUIZ_APTIDAO,
     RouteNames.RECUPERAR_SENHA,
     RouteNames.SOBRE_NOS,
     RouteNames.PONTOS_COLETA
