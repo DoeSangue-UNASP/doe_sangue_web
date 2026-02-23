@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { PhX } from '@phosphor-icons/vue';
 
-defineProps<{
+const props = withDefaults(defineProps<{
     modelValue: boolean;
-}>();
+    width?: string;
+}>(), {
+    width: '500px'
+});
 
 const emit = defineEmits(["update:modelValue"]);
 
@@ -19,7 +22,7 @@ const close = () => {
         </transition>
 
         <transition name="scale">
-            <div v-if="modelValue" class="dialog">
+            <div v-if="modelValue" class="dialog" :style="{ width: props.width }">
                 <header class="dialog-header">
                     <h2>
                         <slot name="header"></slot>
@@ -60,6 +63,7 @@ const close = () => {
     transform: translate(-50%, -50%);
     background: white;
     width: 500px;
+    max-width: calc(100vw - 32px);
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);

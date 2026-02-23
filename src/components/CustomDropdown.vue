@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { PhCaretDown } from '@phosphor-icons/vue';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps<{
     title?: string;
     label: string;
     options: string[];
     modelValue?: string;
+    modelOpen?: boolean;
 }>();
 
 const emit = defineEmits<{
     (e: 'update:modelValue', value: string): void;
+    (e: 'update:modelOpen', value: boolean): void;
     (e: 'change', value: string): void;
 }>();
 
@@ -25,6 +27,16 @@ const selectOption = (option: string) => {
     emit('change', option);
     isOpen.value = false;
 };
+
+watch(() => props.modelOpen, (value) => {
+    if (typeof value === 'boolean') {
+        isOpen.value = value;
+    }
+});
+
+watch(isOpen, (value) => {
+    emit('update:modelOpen', value);
+});
 </script>
 
 <template>

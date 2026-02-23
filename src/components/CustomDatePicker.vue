@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { PhCalendar } from '@phosphor-icons/vue';
+import { ref, computed, watch } from 'vue';
+import { PhCalendarDots, PhCaretLeft, PhCaretRight } from '@phosphor-icons/vue';
+import IconButton from './IconButton.vue';
 
 
 const props = defineProps<{
     id?: string;
     title: string;
+    modelOpen?: boolean;
+}>();
+
+const emit = defineEmits<{
+    (e: 'update:modelOpen', value: boolean): void;
 }>();
 
 const today = new Date();
@@ -57,16 +63,16 @@ interface DayCell {
     isCurrentMonth: boolean;
     isToday: boolean;
     isSelected: boolean;
-    hasEvent: boolean; 
+    hasEvent: boolean;
 }
 
 const calendarDays = computed<DayCell[]>(() => {
     const days: DayCell[] = [];
-    const firstDayOfMonth = new Date(currentYear.value, currentMonthIndex.value, 1).getDay(); 
+    const firstDayOfMonth = new Date(currentYear.value, currentMonthIndex.value, 1).getDay();
     const daysInMonth = new Date(currentYear.value, currentMonthIndex.value + 1, 0).getDate();
     const daysInPrevMonth = new Date(currentYear.value, currentMonthIndex.value, 0).getDate();
-    const daysToPrepend = firstDayOfMonth; 
-    const mockedEvents = new Set([5, 12, 21]); 
+    const daysToPrepend = firstDayOfMonth;
+    const mockedEvents = new Set([5, 12, 21]);
 
     let selectedDayValue: number | null = null
     let selectedMonthIndexValue: number | null = null
@@ -91,17 +97,17 @@ const calendarDays = computed<DayCell[]>(() => {
             isCurrentMonth: false,
             isToday: false,
             isSelected: false,
-            hasEvent: false, 
+            hasEvent: false,
         });
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
         const isToday = (
-            day === today.getDate() && 
-            currentMonthIndex.value === today.getMonth() && 
+            day === today.getDate() &&
+            currentMonthIndex.value === today.getMonth() &&
             currentYear.value === today.getFullYear()
         );
-        
+
         const isSelected = (
             selectedDayValue !== null &&
             day === selectedDayValue &&
@@ -133,6 +139,16 @@ const calendarDays = computed<DayCell[]>(() => {
 
 const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
+watch(() => props.modelOpen, (value) => {
+    if (typeof value === 'boolean') {
+        isCalendarOpen.value = value;
+    }
+});
+
+watch(isCalendarOpen, (value) => {
+    emit('update:modelOpen', value);
+});
+
 
 
 </script>
@@ -141,53 +157,42 @@ const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     <div class="date-picker-wrapper poppins-medium">
         <label id="date-picker-label" class="poppins-regular">{{ title }}</label>
         <div class="date-input-container" @click="toggleCalendar">
-            <input 
-                type="text" 
-                :value="selectedDate" 
-                class="date-input" 
-                placeholder="Selecione uma data"
-                readonly
-            />
-            <span class="calendar-icon"><PhCalendar :size="32" /></span>
+            <input type="text" :value="selectedDate" class="date-input" placeholder="Selecione uma data" readonly />
+            <span class="calendar-icon">
+                <PhCalendarDots :size="32" />
+            </span>
         </div>
 
         <div class="calendar-dropdown" v-if="isCalendarOpen">
-            
+
             <div class="calendar-container">
-                
+
                 <div class="calendar-header">
-                    <button class="nav-btn prev-btn" aria-label="Mês Anterior" @click.stop="navigateMonth('prev')">&lt;</button>
+                    <IconButton :icon="PhCaretLeft" secondary aria-label="Mês Anterior"
+                        @click.stop="navigateMonth('prev')" />
                     <h2 class="current-month-year">
                         {{ monthNames[currentMonthIndex] }} {{ currentYear }}
                     </h2>
-                    <button class="nav-btn next-btn" aria-label="Próximo Mês" @click.stop="navigateMonth('next')">&gt;</button>
+                    <IconButton :icon="PhCaretRight" secondary aria-label="Próximo Mês"
+                        @click.stop="navigateMonth('next')" />
                 </div>
 
                 <div class="calendar-grid">
-                    
+
                     <div class="day-of-week-header">
-                        <span 
-                            v-for="day in daysOfWeek" 
-                            :key="day" 
-                            class="day-name"
-                        >
+                        <span v-for="day in daysOfWeek" :key="day" class="day-name">
                             {{ day }}
                         </span>
                     </div>
 
                     <div class="calendar-days">
-                        <div 
-                            v-for="(item, index) in calendarDays" 
-                            :key="index"
-                            :class="[
-                                'day-cell', 
-                                { 'non-current-month': !item.isCurrentMonth },
-                                { 'today': item.isToday },
-                                { 'selected': item.isSelected },
-                                { 'has-event': item.hasEvent },
-                            ]"
-                            @click="item.isCurrentMonth && handleDateSelect(item.day)"
-                        >
+                        <div v-for="(item, index) in calendarDays" :key="index" :class="[
+                            'day-cell',
+                            { 'non-current-month': !item.isCurrentMonth },
+                            { 'today': item.isToday },
+                            { 'selected': item.isSelected },
+                            { 'has-event': item.hasEvent },
+                        ]" @click="item.isCurrentMonth && handleDateSelect(item.day)">
                             {{ item.day }}
                         </div>
                     </div>
@@ -200,38 +205,41 @@ const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 </template>
 
 <style scoped>
-
-
-
 .date-picker-wrapper {
-    position: relative; 
-    width: 250px; 
+    position: relative;
+    width: 250px;
 }
 
 .date-input-container {
-    display: flex;
-    align-items: center;
+    position: relative;
     cursor: pointer;
-    background-color: white;
+    background-color: var(--font-button-primary);
     height: var(--input-height);
-    padding-right: 10px;
     margin: 8px 0;
 }
 
 .date-input {
-    flex-grow: 1;
-    padding: 10px;
+    width: 100%;
+    height: 100%;
+    padding: 10px 44px 10px 10px;
     outline: none;
     font-size: 1em;
     border: 1px solid var(--input-border-color);
     border-radius: 8px;
     cursor: pointer;
-  
+
 }
 
 .calendar-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 1.2em;
     color: var(--font-color);
+    display: flex;
+    align-items: center;
+    pointer-events: none;
 }
 
 .calendar-dropdown {
@@ -239,16 +247,16 @@ const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     z-index: 1000;
     top: calc(var(--input-height) + 5px);
     left: 0;
-    
+
 }
 
 .calendar-container {
-    max-width: 320px; 
+    max-width: 320px;
     width: 320px;
     border: 1px solid var(--calendar-border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    background-color: var(--calendar-bg-color);
+    background-color: var(--form-color);
     padding: 15px;
 }
 
@@ -267,31 +275,15 @@ const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     margin: 0;
 }
 
-.nav-btn {
-    background: none;
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.nav-btn:hover {
-    background-color: var(--primary-color);
-    color: white;
-}
-
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr); 
+    grid-template-columns: repeat(7, 1fr);
     gap: 1px;
 }
 
 .day-of-week-header {
-    grid-column: 1 / -1; 
-    display: contents; 
+    grid-column: 1 / -1;
+    display: contents;
 }
 
 .day-name {
@@ -340,7 +332,7 @@ const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 .selected {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--font-button-primary);
     font-weight: bold;
 }
 
