@@ -23,12 +23,25 @@ const props = defineProps({
     addRoute: String
 })
 
+const emit = defineEmits<{
+    add: []
+}>()
+
 const router = useRouter();
 
 const showingInput = ref(false);
 
 function toggleInput() {
     showingInput.value = !showingInput.value
+}
+
+function handleAddClick() {
+    if (props.addRoute) {
+        router.push(props.addRoute)
+        return
+    }
+
+    emit('add')
 }
 
 const data = ref(props.data)
@@ -86,7 +99,7 @@ const table = useVueTable({
             <div class="table-scroll">
                 <div class="table-inner">
                     <div class="header-actions">
-                        <IconButton :icon="PhPlus" @click="router.push(addRoute ?? '')" />
+                        <IconButton :icon="PhPlus" @click="handleAddClick" />
                         <IconButton :icon="PhFunnel" @click="toggleInput" secondary />
                         <transition name="fade">
                             <CustomInput v-if="showingInput" placeholder="Pesquisar" v-model="filter" />
