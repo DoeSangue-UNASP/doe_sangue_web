@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
+
 defineProps<{
     label: string;
     click?: () => void;
     secondary?: boolean;
     keepSelected?: boolean;
     redFontColor?: boolean;
-    icon?: string;
+    icon?: string | Component;
 }>();
 </script>
 

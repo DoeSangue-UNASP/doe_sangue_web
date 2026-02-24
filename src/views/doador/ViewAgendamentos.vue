@@ -13,8 +13,23 @@ import CustomInput from '../../components/CustomInput.vue';
 import { router } from '../../router';
 import { RouteNames } from '../../router/route-names';
 
+type AgendamentoStatus = 'Agendado' | 'Concluido' | 'Cancelado'
+
+type Agendamento = {
+    local: string
+    data: string
+    status: AgendamentoStatus
+}
+
+type TableRowContext = {
+    row: {
+        original: Agendamento
+    }
+}
+
 
 const openCriarAgendamento = ref<boolean>(false);
+const openCancelarAgendamento = ref<boolean>(false);
 const isDatePickerOpen = ref(false)
 const isTimeDropdownOpen = ref(false)
 const selectedTime = ref('')
@@ -35,6 +50,11 @@ const timeOptions = [
 const openModalCriarAgendamento = () => {
     openCriarAgendamento.value = true;
 };
+
+const toggleModalCancelarAgendamento = () => {
+    openCancelarAgendamento.value = !openCancelarAgendamento.value;
+}
+
 
 const handleDatePickerOpenChange = (value: boolean) => {
     isDatePickerOpen.value = value
@@ -66,10 +86,10 @@ const columns = [
     {
         header: "Status",
         accessorKey: "status",
-        cell: ({ row }) => {
+        cell: ({ row }: TableRowContext) => {
             const status = row.original.status;
 
-            const variantMap = {
+            const variantMap: Record<AgendamentoStatus, 'warning' | 'success' | 'danger'> = {
                 Agendado: "warning",
                 Concluido: "success",
                 Cancelado: "danger",
@@ -80,11 +100,16 @@ const columns = [
     },
     {
         header: "Ações",
-        cell: ({ row }) => {
+        cell: ({ row }: TableRowContext) => {
             const status = row.original.status;
 
             if (status === "Agendado") {
-                return h(CustomButton, { icon: PhX, label: "Cancelar", secondary: true });
+                return h(CustomButton, {
+                    icon: PhX,
+                    label: "Cancelar",
+                    secondary: true,
+                    onClick: toggleModalCancelarAgendamento,
+                });
             }
             if (status === "Concluido") {
                 return h(CustomButton, { icon: PhEye, label: "Visualizar Doação", secondary: true });
@@ -97,7 +122,7 @@ const columns = [
 ];
 
 
-const data = [
+const data: Agendamento[] = [
     {
         local: "Hemocentro A",
         data: "22/11/2025 10:00",
@@ -151,6 +176,19 @@ const data = [
         <template #footer>
             <div class="modal-footer">
                 <CustomButton class="modal-content-btn" label="Salvar" />
+            </div>
+        </template>
+    </CustomDialog>
+
+    <CustomDialog v-model="openCancelarAgendamento">
+        <template #header>Confirmação de Cancelamento</template>
+        <template #default>
+            <p>Tem certeza que deseja cancelar o agendamento?</p>
+        </template>
+        <template #footer>
+            <div class="modal-footer">
+                <CustomButton class="modal-content-btn" label="Cancelar" secondary />
+                <CustomButton class="modal-content-btn" label="Confirmar" />
             </div>
         </template>
     </CustomDialog>
