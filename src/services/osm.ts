@@ -131,12 +131,15 @@ export const buscarHemocentrosProximos = async (
 ): Promise<HemocentroProximo[]> => {
     const query = montarQueryOverpass(coordenadaUsuario);
 
+    const formData = new URLSearchParams();
+    formData.append('data', query);
+
     const resposta = await fetch(OVERPASS_URL, {
         method: 'POST',
         headers: {
-            'Content-Type': 'text/plain;charset=UTF-8'
+            'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: query
+        body: formData,
     });
 
     if (!resposta.ok) {
