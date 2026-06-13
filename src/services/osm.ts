@@ -1,6 +1,6 @@
 import type { Coordenada, HemocentroProximo } from '../types/hemocentro';
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const PROXY_URL = '/api/overpass';
 const RAIO_MAXIMO_METROS = 15000;
 const DISTANCIA_MAXIMA_KM = 15;
 
@@ -131,15 +131,12 @@ export const buscarHemocentrosProximos = async (
 ): Promise<HemocentroProximo[]> => {
     const query = montarQueryOverpass(coordenadaUsuario);
 
-    const formData = new URLSearchParams();
-    formData.append('data', query);
-
-    const resposta = await fetch(OVERPASS_URL, {
+    const resposta = await fetch(PROXY_URL, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify({ query }),
     });
 
     if (!resposta.ok) {
