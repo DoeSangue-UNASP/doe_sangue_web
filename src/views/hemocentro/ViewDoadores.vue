@@ -36,10 +36,10 @@ const columns = [
     {
         header: "Status de Elegibilidade",
         accessorKey: "status",
-        cell: ({ row }) => {
+        cell: ({ row }: { row: { original: { status: string } } }) => {
             const status = row.original.status;
 
-            const variantMap = {
+            const variantMap: Record<string, string> = {
                 Aguardando: "warning",
                 Apto: "success",
                 Inapto: "danger",

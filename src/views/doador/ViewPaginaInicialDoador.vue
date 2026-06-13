@@ -23,10 +23,10 @@ const columns = [
     {
         header: "Status",
         accessorKey: "status",
-        cell: ({ row }) => {
+        cell: ({ row }: { row: { original: { status: string } } }) => {
             const status = row.original.status;
 
-            const variantMap = {
+            const variantMap: Record<string, string> = {
                 Aprovado: "success",
                 Reprovado: "danger",
             };
@@ -36,8 +36,7 @@ const columns = [
     },
     {
         header: "Ações",
-        cell: ({ row }) => {
-            const status = row.original.status;
+        cell: () => {
             return h(CustomButton, { icon: PhEye, label: "Visualizar", secondary: true });
         }
     }

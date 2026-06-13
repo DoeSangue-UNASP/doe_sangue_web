@@ -8,14 +8,21 @@ import {
     getPaginationRowModel,
     getSortedRowModel,
     getFilteredRowModel,
+    type SortingState,
 } from '@tanstack/vue-table'
 import IconButton from './IconButton.vue'
 import CustomInput from './CustomInput.vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
-    data: Array,
-    columns: Array,
+    data: {
+        type: Array,
+        default: () => []
+    },
+    columns: {
+        type: Array,
+        default: () => []
+    },
     pageSize: {
         type: Number,
         default: 10,
@@ -46,7 +53,7 @@ function handleAddClick() {
 
 const data = ref(props.data)
 
-const sorting = ref([])
+const sorting = ref<SortingState>([])
 const filter = ref('')
 const pagination = ref({
     pageIndex: 0,
@@ -54,8 +61,8 @@ const pagination = ref({
 })
 
 const table = useVueTable({
-    data: data.value,
-    columns: props.columns,
+    data: (data.value ?? []) as unknown[],
+    columns: (props.columns ?? []) as never[],
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -91,6 +98,10 @@ const table = useVueTable({
                 : updaterOrValue
     },
 })
+
+const sortIcons: Record<string, string> = { asc: '↑', desc: '↓' }
+const sortIcon = (col: { getIsSorted: () => string | false }) =>
+    col.getIsSorted() ? sortIcons[col.getIsSorted() as string] ?? '' : ''
 </script>
 
 <template>
@@ -102,7 +113,8 @@ const table = useVueTable({
                         <IconButton :icon="PhPlus" @click="handleAddClick" />
                         <IconButton :icon="PhFunnel" @click="toggleInput" secondary />
                         <transition name="fade">
-                            <CustomInput v-if="showingInput" placeholder="Pesquisar" v-model="filter" />
+                            <CustomInput v-if="showingInput" id="table-search" label="" placeholder="Pesquisar"
+                                v-model="filter" />
                         </transition>
                     </div>
 
@@ -113,7 +125,7 @@ const table = useVueTable({
                                     :class="['table-header', { 'sortable': header.column.getCanSort() }]"
                                     @click="header.column.getToggleSortingHandler()?.($event)">
                                     <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
-                                    {{ { asc: '↑', desc: '↓' }[header.column.getIsSorted()] }}
+                                    {{ sortIcon(header.column) }}
                                 </th>
                             </tr>
                         </thead>

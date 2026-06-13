@@ -22,8 +22,6 @@ let markersLayer: L.LayerGroup | null = null;
 let routeLayer: L.Polyline | null = null;
 let routeRequestVersion = 0;
 
-const INITIAL_ZOOM = 15;
-const SELECTED_ZOOM = 17;
 const FIT_BOUNDS_MAX_ZOOM = 16;
 
 const iconToMarkup = (iconComponent: typeof PhHouse, color: string) => {
@@ -87,16 +85,8 @@ const renderMarkers = () => {
       emit('select-point', point.id);
     });
 
-    marker.addTo(markersLayer);
+    marker.addTo(markersLayer!);
   });
-};
-
-const centralizarMapa = () => {
-  if (!map || !props.userLocation) {
-    return;
-  }
-
-  map.setView([props.userLocation.latitude, props.userLocation.longitude], INITIAL_ZOOM);
 };
 
 const ajustarParaPontosDaPagina = () => {

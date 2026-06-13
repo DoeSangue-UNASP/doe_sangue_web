@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router';
 import CustomDialog from '../../components/CustomDialog.vue';
 import CustomInput from '../../components/CustomInput.vue';
 import CustomButton from '../../components/CustomButton.vue';
-import { RouteNames } from '../../router/route-names';
 
 const route = useRoute();
 
@@ -50,8 +49,6 @@ const toggleEditing = () => {
 
 onMounted(() => {
     if (isViewMode.value) {
-        const donorId = route.params.id;
-
         const data = {
             nomeCompleto: 'Maria Souza',
             genero: 'Feminino',
