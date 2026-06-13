@@ -16,7 +16,7 @@ const senha = ref<string>();
 const confirmarSenha = ref<string>();
 
 const login = () => {
-    router.push({ name: RouteNames.HOME_DOADOR });
+    router.push({ name: RouteNames.HOME_HEMOCENTRO });
 }
 </script>
 

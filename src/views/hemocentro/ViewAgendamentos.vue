@@ -64,50 +64,108 @@ const handleTimeDropdownOpenChange = (value: boolean) => {
 }
 
 const events = ref<EventInput[]>([
+  // Segunda-feira 08/06
   {
     id: '1',
-    title: 'Joe Doe',
-    start: '2026-02-23T08:00:00',
-    end: '2026-02-23T08:40:00',
-    extendedProps: {
-      cpf: '123.567.890-12'
-    }
+    title: 'Ana Silva',
+    start: '2026-06-08T08:00:00',
+    end: '2026-06-08T08:40:00',
+    extendedProps: { cpf: '111.222.333-44' }
   },
   {
     id: '2',
-    title: 'Joe Doe',
-    start: '2026-02-23T09:00:00',
-    end: '2026-02-23T09:40:00',
-    extendedProps: {
-      cpf: '123.567.890-12'
-    }
+    title: 'Carlos Souza',
+    start: '2026-06-08T10:00:00',
+    end: '2026-06-08T10:40:00',
+    extendedProps: { cpf: '222.333.444-55' }
   },
   {
     id: '3',
-    title: 'Joe Doe',
-    start: '2026-02-23T11:00:00',
-    end: '2026-02-23T11:40:00',
-    extendedProps: {
-      cpf: '123.567.890-12'
-    }
+    title: 'Mariana Lima',
+    start: '2026-06-08T14:00:00',
+    end: '2026-06-08T14:40:00',
+    extendedProps: { cpf: '333.444.555-66' }
   },
+  // Terça-feira 09/06
   {
     id: '4',
-    title: 'Joe Doe',
-    start: '2026-02-24T12:00:00',
-    end: '2026-02-24T12:40:00',
-    extendedProps: {
-      cpf: '123.567.890-12'
-    }
+    title: 'Pedro Alves',
+    start: '2026-06-09T09:00:00',
+    end: '2026-06-09T09:40:00',
+    extendedProps: { cpf: '444.555.666-77' }
   },
   {
     id: '5',
-    title: 'Joe Doe',
-    start: '2026-02-25T09:00:00',
-    end: '2026-02-25T09:40:00',
-    extendedProps: {
-      cpf: '123.567.890-12'
-    }
+    title: 'Fernanda Costa',
+    start: '2026-06-09T11:00:00',
+    end: '2026-06-09T11:40:00',
+    extendedProps: { cpf: '555.666.777-88' }
+  },
+  {
+    id: '6',
+    title: 'Rafael Mendes',
+    start: '2026-06-09T15:00:00',
+    end: '2026-06-09T15:40:00',
+    extendedProps: { cpf: '666.777.888-99' }
+  },
+  // Quarta-feira 10/06
+  {
+    id: '7',
+    title: 'Juliana Rocha',
+    start: '2026-06-10T08:00:00',
+    end: '2026-06-10T08:40:00',
+    extendedProps: { cpf: '777.888.999-00' }
+  },
+  {
+    id: '8',
+    title: 'Bruno Ferreira',
+    start: '2026-06-10T13:00:00',
+    end: '2026-06-10T13:40:00',
+    extendedProps: { cpf: '888.999.000-11' }
+  },
+  // Quinta-feira 11/06
+  {
+    id: '9',
+    title: 'Camila Nunes',
+    start: '2026-06-11T10:00:00',
+    end: '2026-06-11T10:40:00',
+    extendedProps: { cpf: '999.000.111-22' }
+  },
+  {
+    id: '10',
+    title: 'Diego Martins',
+    start: '2026-06-11T12:00:00',
+    end: '2026-06-11T12:40:00',
+    extendedProps: { cpf: '000.111.222-33' }
+  },
+  {
+    id: '11',
+    title: 'Letícia Barros',
+    start: '2026-06-11T16:00:00',
+    end: '2026-06-11T16:40:00',
+    extendedProps: { cpf: '112.233.344-55' }
+  },
+  // Sexta-feira 12/06
+  {
+    id: '12',
+    title: 'Thiago Oliveira',
+    start: '2026-06-12T09:00:00',
+    end: '2026-06-12T09:40:00',
+    extendedProps: { cpf: '223.344.455-66' }
+  },
+  {
+    id: '13',
+    title: 'Patrícia Gomes',
+    start: '2026-06-12T11:00:00',
+    end: '2026-06-12T11:40:00',
+    extendedProps: { cpf: '334.455.566-77' }
+  },
+  {
+    id: '14',
+    title: 'Lucas Ribeiro',
+    start: '2026-06-12T14:00:00',
+    end: '2026-06-12T14:40:00',
+    extendedProps: { cpf: '445.566.677-88' }
   }
 ])
 
