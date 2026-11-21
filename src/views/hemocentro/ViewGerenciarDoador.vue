@@ -235,7 +235,8 @@ onMounted(() => {
 
 .template-endereco {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: flex-end;
     gap: 20px;
 }
 
@@ -243,9 +244,10 @@ onMounted(() => {
     display: flex;
     gap: 8px;
     align-items: flex-end;
+    width: 30%;
 }
 
-.cep-input-wrapper-gerenciar :deep(.custom-input) {
+.cep-input-wrapper-gerenciar :deep(.input-container) {
     flex: 1;
 }
 
@@ -287,11 +289,11 @@ onMounted(() => {
 }
 
 .bairro {
-    width: 30%;
+    width: 25%;
 }
 
 .cidade {
-    width: 30%;
+    width: 25%;
 }
 
 .actions {

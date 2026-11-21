@@ -51,3 +51,49 @@ export async function buscarDoadorPorCpf(cpf: string, token: string): Promise<Do
         token
     );
 }
+
+export interface EnderecoDoador {
+    cep: string;
+    numero: string;
+    rua: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+}
+
+export interface MeuPerfilDoador {
+    id: string;
+    nome: string;
+    documento: string;
+    telefone: string;
+    dataNascimento: string;
+    email: string | null;
+    endereco: EnderecoDoador | null;
+}
+
+export interface AtualizarMeuPerfilRequest {
+    nome: string;
+    documento: string;
+    telefone: string;
+    dataNascimento: string;
+    endereco: EnderecoDoador;
+}
+
+export async function buscarMeuPerfil(token: string): Promise<MeuPerfilDoador> {
+    return apiRequest(
+        '/Doador/me',
+        { method: 'GET' },
+        token
+    );
+}
+
+export async function atualizarMeuPerfil(dados: AtualizarMeuPerfilRequest, token: string): Promise<void> {
+    await apiRequest(
+        '/Doador/me',
+        {
+            method: 'PUT',
+            body: JSON.stringify(dados),
+        },
+        token
+    );
+}

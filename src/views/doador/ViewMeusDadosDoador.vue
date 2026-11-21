@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomDialog from '../../components/CustomDialog.vue';
 import CustomInput from '../../components/CustomInput.vue';
 import { useViaCep } from '../../composables/useViaCep';
 import { useToast } from '../../composables/useToast';
+import { obterToken } from '../../services/auth';
+import { atualizarMeuPerfil, buscarMeuPerfil } from '../../services/doador';
 
 const open = ref<boolean>(false);
+const carregando = ref(true);
+const salvando = ref(false);
 const { buscarEnderecoPorCep, carregandoCep, erroCep } = useViaCep();
 const { sucesso, erro } = useToast();
 
 const form = ref({
+    nome: '',
+    documento: '',
+    dataNascimento: '',
+    email: '',
+    telefone: '',
     cep: '',
     rua: '',
     numero: '',
@@ -19,9 +28,68 @@ const form = ref({
     estado: '',
 });
 
+const mensagemErro = (e: unknown, padrao: string) => (e as { message?: string }).message || padrao;
+
 const toggleModal = () => {
     open.value = !open.value;
 };
+
+async function carregarPerfil() {
+    try {
+        const perfil = await buscarMeuPerfil(obterToken() ?? '');
+        form.value = {
+            nome: perfil.nome,
+            documento: perfil.documento,
+            dataNascimento: perfil.dataNascimento,
+            email: perfil.email ?? '',
+            telefone: perfil.telefone,
+            cep: perfil.endereco?.cep ?? '',
+            rua: perfil.endereco?.rua ?? '',
+            numero: perfil.endereco?.numero ?? '',
+            bairro: perfil.endereco?.bairro ?? '',
+            cidade: perfil.endereco?.cidade ?? '',
+            estado: perfil.endereco?.estado ?? '',
+        };
+    } catch (e) {
+        erro(mensagemErro(e, 'Não foi possível carregar seus dados.'));
+    } finally {
+        carregando.value = false;
+    }
+}
+
+async function salvar() {
+    const dados = form.value;
+    const obrigatorios = [dados.nome, dados.documento, dados.dataNascimento, dados.telefone,
+        dados.cep, dados.rua, dados.numero, dados.bairro, dados.cidade, dados.estado];
+    if (obrigatorios.some(campo => !campo.trim())) {
+        erro('Preencha todos os campos.');
+        return;
+    }
+
+    salvando.value = true;
+    try {
+        await atualizarMeuPerfil({
+            nome: dados.nome.trim(),
+            documento: dados.documento.trim(),
+            telefone: dados.telefone.trim(),
+            dataNascimento: dados.dataNascimento,
+            endereco: {
+                cep: dados.cep.trim(),
+                rua: dados.rua.trim(),
+                numero: dados.numero.trim(),
+                bairro: dados.bairro.trim(),
+                cidade: dados.cidade.trim(),
+                estado: dados.estado.trim(),
+            },
+        }, obterToken() ?? '');
+        sucesso('Dados salvos com sucesso!');
+        toggleModal();
+    } catch (e) {
+        erro(mensagemErro(e, 'Não foi possível salvar seus dados.'));
+    } finally {
+        salvando.value = false;
+    }
+}
 
 const preencherEnderecoViaCep = async () => {
     if (!form.value.cep.trim()) {
@@ -41,6 +109,8 @@ const preencherEnderecoViaCep = async () => {
         erro(erroCep.value);
     }
 };
+
+onMounted(carregarPerfil);
 </script>
 
 <template>
@@ -49,38 +119,29 @@ const preencherEnderecoViaCep = async () => {
     </header>
     <div class="dados-pessoais">
         <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Nome Completo" id="nome-completo" placeholder="" />
-            <CustomInput class="input2" label="Gênero" id="genero" placeholder="" />
+            <CustomInput class="input1" label="Nome Completo" id="nome-completo" placeholder="" v-model="form.nome" />
+            <CustomInput class="input2" label="CPF" id="cpf" placeholder="" v-model="form.documento" />
         </div>
 
         <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Nome Social (opcional)" id="nome-social" placeholder="" />
-            <CustomInput class="input2" label="CPF" id="cpf" placeholder="" />
+            <CustomInput label="Data de Nascimento" id="data-nascimento" placeholder="" type="date"
+                v-model="form.dataNascimento" />
         </div>
 
         <div class="template-dois-inputs">
-            <CustomInput label="Data de Nascimento" id="data-nascimento" placeholder="" />
+            <CustomInput class="input1" label="Email" id="email" placeholder="" type="email" v-model="form.email"
+                disabled />
+            <CustomInput class="input2" label="Telefone" id="telefone" placeholder="" v-model="form.telefone" />
         </div>
 
         <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Email" id="email" placeholder="" type="email" />
-            <CustomInput class="input2" label="Telefone" id="telefone" placeholder="" />
-        </div>
-
-        <div class="template-dois-inputs">
-            <CustomInput class="input1" label="Rua" id="rua" placeholder="" />
-            <CustomInput class="input2" label="Número" id="numero" placeholder="" />
+            <CustomInput class="input1" label="Rua" id="rua" placeholder="" v-model="form.rua" />
+            <CustomInput class="input2" label="Número" id="numero" placeholder="" v-model="form.numero" />
         </div>
 
         <div class="template-endereco">
             <div class="cep-input-wrapper-endereco">
-                <CustomInput 
-                    class="cep" 
-                    label="CEP" 
-                    id="cep" 
-                    placeholder="" 
-                    v-model="form.cep"
-                />
+                <CustomInput label="CEP" id="cep" placeholder="" v-model="form.cep" />
                 <button 
                     type="button"
                     @click="preencherEnderecoViaCep"
@@ -90,32 +151,15 @@ const preencherEnderecoViaCep = async () => {
                     {{ carregandoCep ? 'Buscando...' : 'Buscar' }}
                 </button>
             </div>
-            <p v-if="erroCep" class="erro-cep-endereco">{{ erroCep }}</p>
-            <CustomInput 
-                class="bairro" 
-                label="Bairro" 
-                id="bairro" 
-                placeholder="" 
-                v-model="form.bairro"
-            />
-            <CustomInput 
-                class="cidade" 
-                label="Cidade" 
-                id="cidade" 
-                placeholder="" 
-                v-model="form.cidade"
-            />
-            <CustomInput 
-                class="estado" 
-                label="Estado" 
-                id="estado" 
-                placeholder="" 
-                v-model="form.estado"
-            />
+            <CustomInput class="bairro" label="Bairro" id="bairro" placeholder="" v-model="form.bairro" />
+            <CustomInput class="cidade" label="Cidade" id="cidade" placeholder="" v-model="form.cidade" />
+            <CustomInput class="estado" label="Estado" id="estado" placeholder="" v-model="form.estado" />
         </div>
+        <p v-if="erroCep" class="erro-cep-endereco">{{ erroCep }}</p>
 
         <div class="save-btn">
-            <CustomButton @click="toggleModal" label="Salvar" />
+            <CustomButton :label="salvando ? 'Salvando...' : 'Salvar'" :disabled="salvando || carregando"
+                @click="salvar" />
         </div>
     </div>
 
@@ -161,18 +205,21 @@ const preencherEnderecoViaCep = async () => {
 
 .template-endereco {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: flex-end;
     gap: 20px;
 }
 
 .cep-input-wrapper-endereco {
     display: flex;
-    gap: 8px;
     align-items: flex-end;
+    gap: 8px;
+    width: 30%;
 }
 
-.cep-input-wrapper-endereco :deep(.custom-input) {
+.cep-input-wrapper-endereco :deep(.input-container) {
     flex: 1;
+    min-width: 0;
 }
 
 .btn-buscar-cep-endereco {
@@ -213,11 +260,11 @@ const preencherEnderecoViaCep = async () => {
 }
 
 .bairro {
-    width: 30%;
+    width: 25%;
 }
 
 .cidade {
-    width: 30%;
+    width: 25%;
 }
 
 .save-btn {

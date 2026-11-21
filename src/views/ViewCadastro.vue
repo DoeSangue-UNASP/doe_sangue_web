@@ -292,7 +292,7 @@ const cadastrar = async () => {
     align-items: flex-end;
 }
 
-.cep-input-wrapper :deep(.custom-input) {
+.cep-input-wrapper :deep(.input-container) {
     flex: 1;
 }
 

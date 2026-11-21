@@ -126,6 +126,53 @@ export function formatarDataBrasileira(data: string): string {
   });
 }
 
+export function formatarStatusAgendamento(status: StatusAgendamento): string {
+  const statusMap: Record<StatusAgendamento, string> = {
+    AGENDADO: 'Agendado',
+    CONCLUIDO: 'Concluído',
+    CANCELADO: 'Cancelado',
+  };
+  return statusMap[status] || status;
+}
+
+function ordenarPorDataDesc(agendamentos: Agendamento[]): Agendamento[] {
+  return [...agendamentos].sort(
+    (a, b) => new Date(b.agendadoPara).getTime() - new Date(a.agendadoPara).getTime()
+  );
+}
+
+export async function listarAgendamentosOrdenadosDoador(token: string): Promise<Agendamento[]> {
+  return ordenarPorDataDesc(await listarAgendamentosDoador(token));
+}
+
+// No back, uma doação é um agendamento concluído
+export function filtrarDoacoes(agendamentos: Agendamento[]): Agendamento[] {
+  return ordenarPorDataDesc(agendamentos.filter(a => a.status === 'CONCLUIDO'));
+}
+
+export function buscarProximoAgendamento(agendamentos: Agendamento[]): Agendamento | null {
+  const agora = Date.now();
+  const futuros = agendamentos
+    .filter(a => a.status === 'AGENDADO' && new Date(a.agendadoPara).getTime() >= agora)
+    .sort((a, b) => new Date(a.agendadoPara).getTime() - new Date(b.agendadoPara).getTime());
+  return futuros[0] ?? null;
+}
+
+export function formatarApenasData(data: string): string {
+  return new Date(data).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+export function formatarApenasHora(data: string): string {
+  return new Date(data).toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function formatarDataParaInput(data: Date | string): string {
   const date = typeof data === 'string' ? new Date(data) : data;
   const ano = date.getFullYear();

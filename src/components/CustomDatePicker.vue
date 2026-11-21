@@ -8,10 +8,12 @@ const props = defineProps<{
     id?: string;
     title: string;
     modelOpen?: boolean;
+    modelValue?: string;
 }>();
 
 const emit = defineEmits<{
     (e: 'update:modelOpen', value: boolean): void;
+    (e: 'update:modelValue', value: string): void;
 }>();
 
 const today = new Date();
@@ -21,6 +23,16 @@ const selectedDate = ref<string>(
 const isCalendarOpen = ref<boolean>(false);
 const currentMonthIndex = ref<number>(today.getMonth());
 const currentYear = ref<number>(today.getFullYear());
+
+// modelValue usa o formato ISO (yyyy-MM-dd)
+watch(() => props.modelValue, (value) => {
+    if (!value) return;
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) return;
+    selectedDate.value = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    currentMonthIndex.value = month - 1;
+    currentYear.value = year;
+}, { immediate: true });
 
 const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -54,6 +66,7 @@ const handleDateSelect = (day: number): void => {
     const month = (currentMonthIndex.value + 1).toString().padStart(2, '0');
     const dayStr = day.toString().padStart(2, '0');
     selectedDate.value = `${dayStr}/${month}/${currentYear.value}`;
+    emit('update:modelValue', `${currentYear.value}-${month}-${dayStr}`);
     isCalendarOpen.value = false;
 };
 

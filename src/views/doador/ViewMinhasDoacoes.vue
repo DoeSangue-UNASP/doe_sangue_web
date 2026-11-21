@@ -5,15 +5,16 @@ import Table from '../../components/Table.vue';
 import { PhEye } from '@phosphor-icons/vue';
 import CustomButton from '../../components/CustomButton.vue';
 import Badge from '../../components/Badge.vue';
-import { useAuth } from '../../composables/useAuth';
-import * as doacaoService from '../../services/doacao';
-import { ApiError } from '../../services/api';
+import { obterToken } from '../../services/auth';
+import * as agendamentoService from '../../services/agendamento';
+import { RouteNames } from '../../router/route-names';
+
+type TableRowContext = { row: { original: agendamentoService.Agendamento } };
 
 const router = useRouter();
-const { token } = useAuth();
 
 const pageSize = 6;
-const doacoes = ref<any[]>([]);
+const doacoes = ref<agendamentoService.Agendamento[]>([]);
 const carregando = ref(true);
 const erro = ref('');
 
@@ -21,52 +22,28 @@ const columns = [
     {
         header: "Hemocentro",
         accessorKey: "hemocentro",
-        cell: ({ row }: { row: { original: doacaoService.Doacao } }) => {
-            return row.original.hemocentro.nomeFantasia;
-        }
+        cell: ({ row }: TableRowContext) => row.original.hemocentro.nomeFantasia,
     },
     {
         header: "Data da Doação",
-        accessorKey: "dataDoacao",
-        cell: ({ row }: { row: { original: doacaoService.Doacao } }) => {
-            return doacaoService.formatarDataBrasileira(row.original.dataDoacao);
-        }
-    },
-    {
-        header: "Volume (ml)",
-        accessorKey: "volume",
-    },
-    {
-        header: "Bolsas",
-        accessorKey: "bolsas",
-        cell: ({ row }: { row: { original: doacaoService.Doacao } }) => {
-            return row.original.bolsas?.length || 0;
-        }
+        accessorKey: "agendadoPara",
+        cell: ({ row }: TableRowContext) => agendamentoService.formatarDataBrasileira(row.original.agendadoPara),
     },
     {
         header: "Status",
         accessorKey: "status",
-        cell: ({ row }: { row: { original: doacaoService.Doacao } }) => {
-            const status = doacaoService.formatarStatus(row.original.status);
-            const variantMap: Record<string, string> = {
-                'Pendente': 'warning',
-                'Concluída': 'success',
-                'Cancelada': 'danger',
-            };
-
-            return h(Badge, { variant: variantMap[status] || 'default' }, () => status);
-        }
+        cell: ({ row }: TableRowContext) =>
+            h(Badge, { variant: 'success' }, () => agendamentoService.formatarStatusAgendamento(row.original.status)),
     },
     {
         header: "Ações",
-        cell: ({ row }: { row: { original: doacaoService.Doacao } }) => {
-            return h(CustomButton, {
+        cell: ({ row }: TableRowContext) =>
+            h(CustomButton, {
                 icon: PhEye,
                 label: "Detalhes",
                 secondary: true,
-                onClick: () => visualizarDetalhes(row.original.id)
-            });
-        }
+                onClick: () => router.push({ name: RouteNames.DETALHES_DOACAO, params: { id: row.original.id } }),
+            }),
     }
 ];
 
@@ -74,21 +51,13 @@ async function carregarDoacoes() {
     try {
         carregando.value = true;
         erro.value = '';
-        const result = await doacaoService.listarMinhasDoacoes(token.value);
-        doacoes.value = result;
+        const agendamentos = await agendamentoService.listarAgendamentosDoador(obterToken() ?? '');
+        doacoes.value = agendamentoService.filtrarDoacoes(agendamentos);
     } catch (e) {
-        const error = e as ApiError;
-        erro.value = error.message || 'Erro ao carregar doações';
+        erro.value = (e as { message?: string }).message || 'Erro ao carregar doações';
     } finally {
         carregando.value = false;
     }
-}
-
-function visualizarDetalhes(doacaoId: string) {
-    router.push({
-        name: 'detalhes-doacao',
-        params: { id: doacaoId }
-    });
 }
 
 onMounted(() => {
@@ -108,7 +77,7 @@ onMounted(() => {
             <p>{{ erro }}</p>
         </div>
         <div v-else-if="doacoes.length === 0" class="empty">
-            <p>Você ainda não realizou nenhuma doação.</p>
+            <p>Nenhuma doação realizada</p>
         </div>
         <Table v-else :data="doacoes" :columns="columns" :pageSize="pageSize" />
     </main>

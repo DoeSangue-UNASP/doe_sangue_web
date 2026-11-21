@@ -1,58 +1,79 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import Badge from '../../components/Badge.vue'
 import Table from '../../components/Table.vue'
-import { PhEye, PhX, PhClockClockwise, PhMagnifyingGlass } from '@phosphor-icons/vue'
-import { h } from "vue";
+import { PhEye, PhX, PhClockClockwise } from '@phosphor-icons/vue'
 import CustomButton from '../../components/CustomButton.vue'
 import CustomDialog from '../../components/CustomDialog.vue';
 import CustomDatePicker from '../../components/CustomDatePicker.vue';
-import IconButton from '../../components/IconButton.vue';
 import CustomDropdown from '../../components/CustomDropdown.vue';
-import CustomInput from '../../components/CustomInput.vue';
-import { router } from '../../router';
+import CustomSelect from '../../components/CustomSelect.vue';
+import { useRouter } from 'vue-router';
 import { RouteNames } from '../../router/route-names';
-
-type AgendamentoStatus = 'Agendado' | 'Concluido' | 'Cancelado'
-
-type Agendamento = {
-    local: string
-    data: string
-    status: AgendamentoStatus
-}
+import { obterToken } from '../../services/auth';
+import * as agendamentoService from '../../services/agendamento';
+import { buscarMeuPerfil } from '../../services/doador';
+import { gerarHorarios, listarHemocentros, type Hemocentro } from '../../services/hemocentro';
+import { useToast } from '../../composables/useToast';
 
 type TableRowContext = {
     row: {
-        original: Agendamento
+        original: agendamentoService.Agendamento
     }
 }
 
+const router = useRouter();
+const { sucesso, erro } = useToast();
+
+const mensagemErro = (e: unknown, padrao: string) => (e as { message?: string }).message || padrao;
+const dataDeHoje = () => agendamentoService.formatarDataParaInput(new Date()).split('T')[0] as string;
+
+const agendamentos = ref<agendamentoService.Agendamento[]>([]);
+const hemocentros = ref<Hemocentro[]>([]);
+const doadorId = ref('');
+const carregando = ref(true);
+const erroCarregamento = ref('');
+const tabelaKey = ref(0);
+const salvando = ref(false);
 
 const openCriarAgendamento = ref<boolean>(false);
 const openCancelarAgendamento = ref<boolean>(false);
+const agendamentoParaCancelar = ref<string | null>(null);
 const isDatePickerOpen = ref(false)
 const isTimeDropdownOpen = ref(false)
+const hemocentroSelecionadoId = ref('');
+const dataSelecionada = ref(dataDeHoje());
 const selectedTime = ref('')
 
-const timeOptions = [
-    '08:00',
-    '09:00',
-    '10:00',
-    '11:00',
-    '12:00',
-    '13:00',
-    '14:00',
-    '15:00',
-    '16:00'
-]
+const hemocentrosOptions = computed(() => [
+    { value: '', label: 'Selecione um hemocentro' },
+    ...hemocentros.value.map(h => ({ value: h.id, label: h.nomeFantasia })),
+]);
 
+const timeOptions = computed(() => {
+    const hemocentro = hemocentros.value.find(h => h.id === hemocentroSelecionadoId.value);
+    return hemocentro ? gerarHorarios(hemocentro.abreEm, hemocentro.fechaEm) : [];
+});
 
-const openModalCriarAgendamento = () => {
+watch(hemocentroSelecionadoId, () => {
+    selectedTime.value = '';
+});
+
+const abrirCriarAgendamento = (hemocentroId = '') => {
+    hemocentroSelecionadoId.value = hemocentroId;
+    dataSelecionada.value = dataDeHoje();
+    selectedTime.value = '';
     openCriarAgendamento.value = true;
 };
 
-const toggleModalCancelarAgendamento = () => {
-    openCancelarAgendamento.value = !openCancelarAgendamento.value;
+const abrirCancelarAgendamento = (agendamentoId: string) => {
+    agendamentoParaCancelar.value = agendamentoId;
+    openCancelarAgendamento.value = true;
+}
+
+const fecharCancelarAgendamento = () => {
+    openCancelarAgendamento.value = false;
+    agendamentoParaCancelar.value = null;
 }
 
 
@@ -77,11 +98,13 @@ const pageSize = 6;
 const columns = [
     {
         header: "Local",
-        accessorKey: "local",
+        accessorKey: "hemocentro",
+        cell: ({ row }: TableRowContext) => row.original.hemocentro.nomeFantasia,
     },
     {
         header: "Marcado Para",
-        accessorKey: "data",
+        accessorKey: "agendadoPara",
+        cell: ({ row }: TableRowContext) => agendamentoService.formatarDataBrasileira(row.original.agendadoPara),
     },
     {
         header: "Status",
@@ -89,56 +112,125 @@ const columns = [
         cell: ({ row }: TableRowContext) => {
             const status = row.original.status;
 
-            const variantMap: Record<AgendamentoStatus, 'warning' | 'success' | 'danger'> = {
-                Agendado: "warning",
-                Concluido: "success",
-                Cancelado: "danger",
+            const variantMap: Record<agendamentoService.StatusAgendamento, 'warning' | 'success' | 'danger'> = {
+                AGENDADO: "warning",
+                CONCLUIDO: "success",
+                CANCELADO: "danger",
             };
 
-            return h(Badge, { variant: variantMap[status] }, () => status);
+            return h(Badge, { variant: variantMap[status] }, () => agendamentoService.formatarStatusAgendamento(status));
         }
     },
     {
         header: "Ações",
         cell: ({ row }: TableRowContext) => {
-            const status = row.original.status;
+            const { status, id, hemocentro } = row.original;
 
-            if (status === "Agendado") {
+            if (status === "AGENDADO") {
                 return h(CustomButton, {
                     icon: PhX,
                     label: "Cancelar",
                     secondary: true,
-                    onClick: toggleModalCancelarAgendamento,
+                    onClick: () => abrirCancelarAgendamento(id),
                 });
             }
-            if (status === "Concluido") {
-                return h(CustomButton, { icon: PhEye, label: "Visualizar Doação", secondary: true });
+            if (status === "CONCLUIDO") {
+                return h(CustomButton, {
+                    icon: PhEye,
+                    label: "Visualizar Doação",
+                    secondary: true,
+                    onClick: () => router.push({ name: RouteNames.DETALHES_DOACAO, params: { id } }),
+                });
             }
-            if (status === "Cancelado") {
-                return h(CustomButton, { icon: PhClockClockwise, label: "Reagendar", secondary: true });
-            }
+            return h(CustomButton, {
+                icon: PhClockClockwise,
+                label: "Reagendar",
+                secondary: true,
+                onClick: () => abrirCriarAgendamento(hemocentro.id),
+            });
         }
     }
 ];
 
+async function carregarAgendamentos() {
+    agendamentos.value = await agendamentoService.listarAgendamentosOrdenadosDoador(obterToken() ?? '');
+    tabelaKey.value++;
+}
 
-const data: Agendamento[] = [
-    {
-        local: "Hemocentro A",
-        data: "22/11/2025 10:00",
-        status: "Agendado",
-    },
-    {
-        local: "Hemocentro B",
-        data: "10/10/2025 14:00",
-        status: "Concluido",
-    },
-    {
-        local: "Hemocentro C",
-        data: "05/08/2025 08:00",
-        status: "Cancelado",
-    },
-];
+async function carregarDados() {
+    try {
+        await carregarAgendamentos();
+    } catch (e) {
+        erroCarregamento.value = mensagemErro(e, 'Erro ao carregar agendamentos');
+    } finally {
+        carregando.value = false;
+    }
+
+    try {
+        const [perfil, listaHemocentros] = await Promise.all([
+            buscarMeuPerfil(obterToken() ?? ''),
+            listarHemocentros(),
+        ]);
+        doadorId.value = perfil.id;
+        hemocentros.value = listaHemocentros;
+    } catch (e) {
+        erro(mensagemErro(e, 'Não foi possível carregar os hemocentros.'));
+    }
+}
+
+async function confirmarCancelamento() {
+    if (!agendamentoParaCancelar.value) return;
+
+    salvando.value = true;
+    try {
+        await agendamentoService.cancelarAgendamento(agendamentoParaCancelar.value, obterToken() ?? '');
+        sucesso('Agendamento cancelado com sucesso!');
+        fecharCancelarAgendamento();
+        await carregarAgendamentos();
+    } catch (e) {
+        erro(mensagemErro(e, 'Não foi possível cancelar o agendamento.'));
+    } finally {
+        salvando.value = false;
+    }
+}
+
+async function salvarAgendamento() {
+    if (!hemocentroSelecionadoId.value) {
+        erro('Selecione um hemocentro.');
+        return;
+    }
+    if (!selectedTime.value) {
+        erro('Selecione um horário.');
+        return;
+    }
+
+    const agendadoPara = `${dataSelecionada.value}T${selectedTime.value}:00`;
+    if (!agendamentoService.validarDataFutura(agendadoPara)) {
+        erro('Selecione uma data e um horário futuros.');
+        return;
+    }
+    if (!doadorId.value) {
+        erro('Não foi possível identificar o doador.');
+        return;
+    }
+
+    salvando.value = true;
+    try {
+        await agendamentoService.criarAgendamentoDoador(
+            { doadorId: doadorId.value, hemocentroId: hemocentroSelecionadoId.value, agendadoPara },
+            obterToken() ?? ''
+        );
+        sucesso('Agendamento criado com sucesso!');
+        openCriarAgendamento.value = false;
+        await carregarAgendamentos();
+    } catch (e) {
+        erro(mensagemErro(e, 'Não foi possível criar o agendamento.'));
+    } finally {
+        salvando.value = false;
+    }
+}
+
+onMounted(carregarDados);
 </script>
 
 
@@ -146,18 +238,23 @@ const data: Agendamento[] = [
     <header class="title">
         <h1>Agendamentos</h1>
     </header>
-    <Table :data="data" :columns="columns" :pageSize="pageSize" @add="openModalCriarAgendamento" />
+    <p v-if="carregando" class="empty">Carregando agendamentos...</p>
+    <p v-else-if="erroCarregamento" class="empty erro">{{ erroCarregamento }}</p>
+    <template v-else>
+        <Table :key="tabelaKey" :data="agendamentos" :columns="columns" :pageSize="pageSize"
+            @add="abrirCriarAgendamento()" />
+        <p v-if="agendamentos.length === 0" class="empty">Nenhum agendamento</p>
+    </template>
     <CustomDialog v-model="openCriarAgendamento" width="760px">
         <template #header>
             Criar Agendamento
         </template>
         <template #default>
             <div class="modal-content-search-row">
-                <CustomInput class="modal-content-input" label="Pesquisar Hemocentro" id="pesquisar-hemocentro"
-                    placeholder="Pesquisar hemocentro" />
-                <IconButton :icon="PhMagnifyingGlass" />
+                <CustomSelect class="modal-content-input" id="hemocentro-agendamento" label="Hemocentro"
+                    v-model="hemocentroSelecionadoId" :options="hemocentrosOptions" />
                 <CustomButton class="modal-content-btn" secondary red-font-color label="Procurar no mapa"
-                    @click="router.push(RouteNames.BUSCAR_HEMOCENTROS_DOADOR)" />
+                    @click="router.push({ name: RouteNames.BUSCAR_HEMOCENTROS_DOADOR })" />
             </div>
 
             <div class="modal-content-schedule">
@@ -165,7 +262,8 @@ const data: Agendamento[] = [
 
                 <div class="modal-content-schedule-fields">
                     <CustomDatePicker class="modal-content-datepicker" title="Dia" id="data-agendamento"
-                        v-model:model-open="isDatePickerOpen" @update:model-open="handleDatePickerOpenChange" />
+                        v-model="dataSelecionada" v-model:model-open="isDatePickerOpen"
+                        @update:model-open="handleDatePickerOpenChange" />
 
                     <CustomDropdown class="modal-content-time-select" title="Horário" label="Selecione"
                         :options="timeOptions" v-model="selectedTime" v-model:model-open="isTimeDropdownOpen"
@@ -175,7 +273,8 @@ const data: Agendamento[] = [
         </template>
         <template #footer>
             <div class="modal-footer">
-                <CustomButton class="modal-content-btn" label="Salvar" />
+                <CustomButton class="modal-content-btn" :label="salvando ? 'Salvando...' : 'Salvar'"
+                    :disabled="salvando" @click="salvarAgendamento" />
             </div>
         </template>
     </CustomDialog>
@@ -187,14 +286,25 @@ const data: Agendamento[] = [
         </template>
         <template #footer>
             <div class="modal-footer">
-                <CustomButton class="modal-content-btn" label="Cancelar" secondary />
-                <CustomButton class="modal-content-btn" label="Confirmar" />
+                <CustomButton class="modal-content-btn" label="Voltar" secondary
+                    @click="fecharCancelarAgendamento" />
+                <CustomButton class="modal-content-btn" :label="salvando ? 'Cancelando...' : 'Confirmar'"
+                    :disabled="salvando" @click="confirmarCancelamento" />
             </div>
         </template>
     </CustomDialog>
 </template>
 
 <style scoped>
+.empty {
+    margin-top: 16px;
+    color: #6b7280;
+}
+
+.empty.erro {
+    color: #b91c1c;
+}
+
 .modal-content-input {
     width: 350px;
 }

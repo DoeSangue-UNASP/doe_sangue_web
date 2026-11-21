@@ -3,16 +3,14 @@ import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
 import Badge from '../../components/Badge.vue';
-import { useAuth } from '../../composables/useAuth';
-import * as doacaoService from '../../services/doacao';
-import { ApiError } from '../../services/api';
+import { obterToken } from '../../services/auth';
+import * as agendamentoService from '../../services/agendamento';
 import { PhArrowLeft } from '@phosphor-icons/vue';
 
 const router = useRouter();
 const route = useRoute();
-const { token } = useAuth();
 
-const doacao = ref<doacaoService.Doacao | null>(null);
+const doacao = ref<agendamentoService.Agendamento | null>(null);
 const carregando = ref(true);
 const erro = ref('');
 
@@ -21,10 +19,10 @@ async function carregarDoacao() {
         carregando.value = true;
         erro.value = '';
         const doacaoId = route.params.id as string;
-        doacao.value = await doacaoService.buscarDoacaoPorId(doacaoId, token.value);
+        const agendamentos = await agendamentoService.listarAgendamentosDoador(obterToken() ?? '');
+        doacao.value = agendamentoService.filtrarDoacoes(agendamentos).find(a => a.id === doacaoId) ?? null;
     } catch (e) {
-        const error = e as ApiError;
-        erro.value = error.message || 'Erro ao carregar doação';
+        erro.value = (e as { message?: string }).message || 'Erro ao carregar doação';
     } finally {
         carregando.value = false;
     }
@@ -43,7 +41,7 @@ onMounted(() => {
     <div class="container">
         <header class="header">
             <CustomButton 
-                icon="PhArrowLeft" 
+                :icon="PhArrowLeft" 
                 label="Voltar" 
                 secondary 
                 @click="voltar"
@@ -69,56 +67,20 @@ onMounted(() => {
                     </div>
                     <div class="info-item">
                         <label>Data da Doação:</label>
-                        <p>{{ doacaoService.formatarDataBrasileira(doacao.dataDoacao) }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Volume Doado:</label>
-                        <p>{{ doacao.volume }}ml</p>
+                        <p>{{ agendamentoService.formatarDataBrasileira(doacao.agendadoPara) }}</p>
                     </div>
                     <div class="info-item">
                         <label>Status:</label>
-                        <Badge :variant="doacao.status === 'CONCLUIDA' ? 'success' : doacao.status === 'PENDENTE' ? 'warning' : 'danger'">
-                            {{ doacaoService.formatarStatus(doacao.status) }}
+                        <Badge variant="success">
+                            {{ agendamentoService.formatarStatusAgendamento(doacao.status) }}
                         </Badge>
                     </div>
                 </div>
             </section>
+        </main>
 
-            <section class="bolsas-section" v-if="doacao.bolsas && doacao.bolsas.length > 0">
-                <h2>Bolsas de Sangue Geradas</h2>
-                <div class="bolsas-list">
-                    <div v-for="bolsa in doacao.bolsas" :key="bolsa.id" class="bolsa-card">
-                        <div class="bolsa-header">
-                            <h3>{{ bolsa.codigo }}</h3>
-                            <Badge :variant="bolsa.status === 'DISPONIVEL' ? 'success' : bolsa.status === 'UTILIZADA' ? 'info' : 'danger'">
-                                {{ doacaoService.formatarStatusBolsa(bolsa.status) }}
-                            </Badge>
-                        </div>
-                        <div class="bolsa-info">
-                            <div class="bolsa-item">
-                                <label>Tipo Sanguíneo:</label>
-                                <p>{{ bolsa.tipoSanguineo }}</p>
-                            </div>
-                            <div class="bolsa-item">
-                                <label>Volume:</label>
-                                <p>{{ bolsa.volume }}ml</p>
-                            </div>
-                            <div class="bolsa-item">
-                                <label>Data de Coleta:</label>
-                                <p>{{ doacaoService.formatarDataBrasileira(bolsa.dataColeta) }}</p>
-                            </div>
-                            <div class="bolsa-item">
-                                <label>Validade:</label>
-                                <p>{{ doacaoService.formatarDataBrasileira(bolsa.dataValidade) }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section v-else class="empty">
-                <p>Nenhuma bolsa de sangue foi gerada para esta doação.</p>
-            </section>
+        <main v-else class="empty">
+            <p>Nenhuma doação encontrada</p>
         </main>
     </div>
 </template>
