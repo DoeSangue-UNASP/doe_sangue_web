@@ -5,78 +5,12 @@ import CustomButton from '../../components/CustomButton.vue';
 import NavbarLanding from '../../components/NavbarLanding.vue';
 import { router } from '../../router';
 import { RouteNames } from '../../router/route-names';
+import * as quizService from '../../services/quiz';
 
-type QuizOption = {
-  id: number;
-  answer: string;
-  isCorrect: boolean;
-};
+type QuizOption = quizService.QuizOption;
+type QuizQuestion = quizService.QuizQuestion;
 
-type QuizQuestion = {
-  id: number;
-  question: string;
-  helperText: string;
-  options: QuizOption[];
-};
-
-const quiz = [
-  {
-    id: 1,
-    question: "Qual a sua idade?",
-    helperText: "Este é um dos requisitos básicos para doação",
-    options: [
-      {
-        id: 1,
-        answer: "Menor que 16",
-        isCorrect: false
-      },
-      {
-        id: 2,
-        answer: "Entre 16 e 69 anos",
-        isCorrect: true
-      },
-      {
-        id: 3,
-        answer: "Mais que 69 anos",
-        isCorrect: false
-      },
-    ],
-  },
-  {
-    id: 2,
-    question: "Qual é o seu peso?",
-    helperText: "O peso mínimo é necessário para a segurança da doação",
-    options: [
-      {
-        id: 1,
-        answer: "Menos que 50kg",
-        isCorrect: false
-      },
-      {
-        id: 2,
-        answer: "50kg ou mais",
-        isCorrect: true
-      },
-    ],
-  },
-  {
-    id: 3,
-    question: "Teve gripe nos últimos 7 dias?",
-    helperText: "Esse critério ajuda a proteger você e quem vai receber o sangue",
-    options: [
-      {
-        id: 1,
-        answer: "Sim",
-        isCorrect: false
-      },
-      {
-        id: 2,
-        answer: "Não",
-        isCorrect: true
-      },
-    ],
-  },
-] satisfies QuizQuestion[];
+const quiz = quizService.obterTodasPerguntas();
 
 const currentStep = ref(0);
 const selectedAnswers = ref<Record<number, number | undefined>>({});
@@ -93,15 +27,13 @@ const canContinue = computed(() => currentQuestionSelection.value !== undefined)
 const canGoBack = computed(() => currentStep.value > 0);
 
 const isApto = computed(() => {
-  return quiz.every((question) => {
-    const selectedOptionId = selectedAnswers.value[question.id];
-    if (selectedOptionId === undefined) {
-      return false;
+  const responses = new Map<number, number>();
+  Object.entries(selectedAnswers.value).forEach(([questionId, optionId]) => {
+    if (optionId !== undefined) {
+      responses.set(Number(questionId), optionId);
     }
-
-    const selectedOption = question.options.find((option) => option.id === selectedOptionId);
-    return selectedOption?.isCorrect === true;
   });
+  return quizService.avaliarQuiz(responses);
 });
 
 const selectOption = (optionId: number) => {
