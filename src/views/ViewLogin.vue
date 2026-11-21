@@ -9,30 +9,37 @@ import IconButton from '../components/IconButton.vue';
 import { PhX } from '@phosphor-icons/vue';
 import { entrar } from '../services/auth';
 import { ApiError } from '../services/api';
+import { useToast } from '../composables/useToast';
 
 const router = useRouter();
 const route = useRoute();
+const { sucesso, erro } = useToast();
 
 const email = ref('');
 const senha = ref('');
-const erro = ref('');
+const erroFormulario = ref('');
 const carregando = ref(false);
 
 const login = async () => {
-    erro.value = '';
+    erroFormulario.value = '';
     if (!email.value.trim() || !senha.value) {
-        erro.value = 'Informe seu e-mail e sua senha.';
+        const mensagem = 'Informe seu e-mail e sua senha.';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
         return;
     }
 
     carregando.value = true;
     try {
         const perfil = await entrar(email.value.trim(), senha.value);
+        sucesso('Bem-vindo!');
         await router.push({ name: perfil === 'DOADOR' ? RouteNames.HOME_DOADOR : RouteNames.HOME_HEMOCENTRO });
     } catch (error) {
-        erro.value = error instanceof ApiError && error.status === 401
+        const mensagem = error instanceof ApiError && error.status === 401
             ? 'E-mail ou senha inválidos.'
             : error instanceof Error ? error.message : 'Não foi possível entrar.';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         carregando.value = false;
     }
@@ -62,7 +69,7 @@ const cadastrar = () => {
                 <p v-if="route.query.sessao === 'indisponivel'" role="alert">Não foi possível verificar sua sessão. Verifique a conexão com a API.</p>
                 <CustomInput label="E-mail" id="email" v-model="email" placeholder="email@email.com" type="email" />
                 <CustomInput label="Senha" id="senha" v-model="senha" placeholder="******" type="password" />
-                <p v-if="erro" class="erro" role="alert">{{ erro }}</p>
+                <p v-if="erroFormulario" class="erro" role="alert">{{ erroFormulario }}</p>
                 <div class="form-button">
                     <CustomButton :label="carregando ? 'Entrando...' : 'Entrar'" :disabled="carregando" />
                     <LinkButton label="Esqueci minha senha" :route-name="RouteNames.RECUPERAR_SENHA" />

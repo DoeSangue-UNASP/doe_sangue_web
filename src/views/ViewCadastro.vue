@@ -8,9 +8,12 @@ import { RouteNames } from '../router/route-names';
 import { PhX } from '@phosphor-icons/vue';
 import IconButton from '../components/IconButton.vue';
 import { apiRequest } from '../services/api';
+import { useToast } from '../composables/useToast';
 
 const router = useRouter();
 const route = useRoute();
+const { sucesso, erro } = useToast();
+
 const perfil = ref<'doador' | 'hemocentro'>(route.query.perfil === 'hemocentro' ? 'hemocentro' : 'doador');
 const form = ref({
     nome: '', documento: '', telefone: '', dataNascimento: '',
@@ -18,11 +21,11 @@ const form = ref({
     email: '', senha: '', confirmarSenha: '',
     cep: '', numero: '', rua: '', bairro: '', cidade: '', estado: '',
 });
-const erro = ref('');
+const erroFormulario = ref('');
 const carregando = ref(false);
 
 const cadastrar = async () => {
-    erro.value = '';
+    erroFormulario.value = '';
     const dados = form.value;
     const camposComuns = [dados.email, dados.senha, dados.confirmarSenha, dados.cep, dados.numero,
         dados.rua, dados.bairro, dados.cidade, dados.estado];
@@ -30,11 +33,15 @@ const cadastrar = async () => {
         ? [dados.nome, dados.documento, dados.telefone, dados.dataNascimento]
         : [dados.cnpj, dados.site, dados.nomeFantasia, dados.abreEm, dados.fechaEm];
     if ([...camposComuns, ...camposPerfil].some(campo => !campo.trim())) {
-        erro.value = 'Preencha todos os campos.';
+        const mensagem = 'Preencha todos os campos.';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
         return;
     }
     if (dados.senha !== dados.confirmarSenha) {
-        erro.value = 'As senhas não coincidem.';
+        const mensagem = 'As senhas não coincidem.';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
         return;
     }
     const endereco = {
@@ -57,9 +64,12 @@ const cadastrar = async () => {
             method: 'POST',
             body: JSON.stringify(body),
         });
+        sucesso('Cadastro realizado com sucesso!');
         await router.push({ name: RouteNames.LOGIN, query: { cadastro: 'concluido' } });
     } catch (error) {
-        erro.value = error instanceof Error ? error.message : 'Não foi possível realizar o cadastro.';
+        const mensagem = error instanceof Error ? error.message : 'Não foi possível realizar o cadastro.';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         carregando.value = false;
     }
@@ -107,7 +117,7 @@ const cadastrar = async () => {
                 <CustomInput label="Bairro" id="bairro" v-model="form.bairro" />
                 <CustomInput label="Cidade" id="cidade" v-model="form.cidade" />
                 <CustomInput label="Estado" id="estado" v-model="form.estado" />
-                <p v-if="erro" class="erro" role="alert">{{ erro }}</p>
+                <p v-if="erroFormulario" class="erro" role="alert">{{ erroFormulario }}</p>
                 <div class="form-button">
                     <CustomButton :label="carregando ? 'Cadastrando...' : 'Cadastrar'" :disabled="carregando" />
                     <LinkButton label="Já tenho conta" :route-name="RouteNames.LOGIN" />

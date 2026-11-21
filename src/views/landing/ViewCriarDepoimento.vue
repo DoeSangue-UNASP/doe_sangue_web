@@ -6,9 +6,11 @@ import CustomInput from '../../components/CustomInput.vue';
 import * as depoimentoService from '../../services/depoimento';
 import { ApiError } from '../../services/api';
 import { useAuth } from '../../composables/useAuth';
+import { useToast } from '../../composables/useToast';
 
 const router = useRouter();
 const { token } = useAuth();
+const { sucesso, erro } = useToast();
 
 const formulario = ref({
     titulo: '',
@@ -16,8 +18,8 @@ const formulario = ref({
 });
 
 const salvando = ref(false);
-const erro = ref('');
-const sucesso = ref(false);
+const erroFormulario = ref('');
+const sucessoEnvio = ref(false);
 const erros = ref<Record<string, string>>({});
 
 function validar(): boolean {
@@ -47,14 +49,15 @@ async function salvar() {
 
     try {
         salvando.value = true;
-        erro.value = '';
+        erroFormulario.value = '';
 
         await depoimentoService.criarDepoimento({
             titulo: formulario.value.titulo.trim(),
             conteudo: formulario.value.conteudo.trim(),
         }, token.value);
 
-        sucesso.value = true;
+        sucessoEnvio.value = true;
+        sucesso('Depoimento enviado com sucesso!');
 
         setTimeout(() => {
             router.push({
@@ -63,7 +66,9 @@ async function salvar() {
         }, 2000);
     } catch (e) {
         const error = e as ApiError;
-        erro.value = error.message || 'Erro ao enviar depoimento';
+        const mensagem = error.message || 'Erro ao enviar depoimento';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         salvando.value = false;
     }
@@ -88,15 +93,15 @@ const caracteresRestantes = () => 2000 - formulario.value.conteudo.length;
         </header>
 
         <main class="content">
-            <div v-if="sucesso" class="success">
+            <div v-if="sucessoEnvio" class="success">
                 <h2>✓ Depoimento enviado com sucesso!</h2>
                 <p>Obrigado por compartilhar sua história.</p>
                 <p style="font-size: 0.875rem; margin-top: 0.5rem;">Redirecionando...</p>
             </div>
 
             <form v-else class="form" @submit.prevent="salvar">
-                <div v-if="erro" class="error">
-                    <p>{{ erro }}</p>
+                <div v-if="erroFormulario" class="error">
+                    <p>{{ erroFormulario }}</p>
                 </div>
 
                 <div class="form-group">
