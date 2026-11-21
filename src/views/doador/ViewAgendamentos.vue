@@ -39,6 +39,7 @@ const salvando = ref(false);
 const openCriarAgendamento = ref<boolean>(false);
 const openCancelarAgendamento = ref<boolean>(false);
 const agendamentoParaCancelar = ref<string | null>(null);
+const agendamentoParaReagendar = ref<string | null>(null);
 const isDatePickerOpen = ref(false)
 const isTimeDropdownOpen = ref(false)
 const hemocentroSelecionadoId = ref('');
@@ -59,7 +60,8 @@ watch(hemocentroSelecionadoId, () => {
     selectedTime.value = '';
 });
 
-const abrirCriarAgendamento = (hemocentroId = '') => {
+const abrirCriarAgendamento = (hemocentroId = '', agendamentoId: string | null = null) => {
+    agendamentoParaReagendar.value = agendamentoId;
     hemocentroSelecionadoId.value = hemocentroId;
     dataSelecionada.value = dataDeHoje();
     selectedTime.value = '';
@@ -97,18 +99,20 @@ const pageSize = 6;
 
 const columns = [
     {
+        id: "hemocentro",
         header: "Local",
-        accessorKey: "hemocentro",
-        cell: ({ row }: TableRowContext) => row.original.hemocentro.nomeFantasia,
+        accessorFn: (agendamento: agendamentoService.Agendamento) => agendamento.hemocentro.nomeFantasia,
     },
     {
         header: "Marcado Para",
         accessorKey: "agendadoPara",
+        enableGlobalFilter: false,
         cell: ({ row }: TableRowContext) => agendamentoService.formatarDataBrasileira(row.original.agendadoPara),
     },
     {
         header: "Status",
         accessorKey: "status",
+        enableGlobalFilter: false,
         cell: ({ row }: TableRowContext) => {
             const status = row.original.status;
 
@@ -146,7 +150,7 @@ const columns = [
                 icon: PhClockClockwise,
                 label: "Reagendar",
                 secondary: true,
-                onClick: () => abrirCriarAgendamento(hemocentro.id),
+                onClick: () => abrirCriarAgendamento(hemocentro.id, id),
             });
         }
     }
@@ -209,22 +213,27 @@ async function salvarAgendamento() {
         erro('Selecione uma data e um horário futuros.');
         return;
     }
-    if (!doadorId.value) {
+    if (!doadorId.value && !agendamentoParaReagendar.value) {
         erro('Não foi possível identificar o doador.');
         return;
     }
 
     salvando.value = true;
     try {
-        await agendamentoService.criarAgendamentoDoador(
-            { doadorId: doadorId.value, hemocentroId: hemocentroSelecionadoId.value, agendadoPara },
-            obterToken() ?? ''
-        );
-        sucesso('Agendamento criado com sucesso!');
+        if (agendamentoParaReagendar.value) {
+            await agendamentoService.reagendarAgendamento(agendamentoParaReagendar.value, agendadoPara, obterToken() ?? '');
+            sucesso('Agendamento reagendado com sucesso!');
+        } else {
+            await agendamentoService.criarAgendamentoDoador(
+                { doadorId: doadorId.value, hemocentroId: hemocentroSelecionadoId.value, agendadoPara },
+                obterToken() ?? ''
+            );
+            sucesso('Agendamento criado com sucesso!');
+        }
         openCriarAgendamento.value = false;
         await carregarAgendamentos();
     } catch (e) {
-        erro(mensagemErro(e, 'Não foi possível criar o agendamento.'));
+        erro(mensagemErro(e, 'Não foi possível salvar o agendamento.'));
     } finally {
         salvando.value = false;
     }
@@ -241,20 +250,24 @@ onMounted(carregarDados);
     <p v-if="carregando" class="empty">Carregando agendamentos...</p>
     <p v-else-if="erroCarregamento" class="empty erro">{{ erroCarregamento }}</p>
     <template v-else>
-        <Table :key="tabelaKey" :data="agendamentos" :columns="columns" :pageSize="pageSize"
-            @add="abrirCriarAgendamento()" />
-        <p v-if="agendamentos.length === 0" class="empty">Nenhum agendamento</p>
+        <Table v-if="agendamentos.length > 0" :key="tabelaKey" :data="agendamentos" :columns="columns"
+            :pageSize="pageSize" @add="abrirCriarAgendamento()" />
+        <div v-else class="empty-state">
+            <p>Nenhum agendamento</p>
+            <CustomButton label="Agendar" @click="abrirCriarAgendamento()" />
+        </div>
     </template>
     <CustomDialog v-model="openCriarAgendamento" width="760px">
         <template #header>
-            Criar Agendamento
+            {{ agendamentoParaReagendar ? 'Reagendar Agendamento' : 'Criar Agendamento' }}
         </template>
         <template #default>
             <div class="modal-content-search-row">
                 <CustomSelect class="modal-content-input" id="hemocentro-agendamento" label="Hemocentro"
-                    v-model="hemocentroSelecionadoId" :options="hemocentrosOptions" />
-                <CustomButton class="modal-content-btn" secondary red-font-color label="Procurar no mapa"
-                    @click="router.push({ name: RouteNames.BUSCAR_HEMOCENTROS_DOADOR })" />
+                    v-model="hemocentroSelecionadoId" :options="hemocentrosOptions"
+                    :disabled="!!agendamentoParaReagendar" />
+                <CustomButton v-if="!agendamentoParaReagendar" class="modal-content-btn" secondary red-font-color
+                    label="Procurar no mapa" @click="router.push({ name: RouteNames.BUSCAR_HEMOCENTROS_DOADOR })" />
             </div>
 
             <div class="modal-content-schedule">
@@ -297,12 +310,38 @@ onMounted(carregarDados);
 
 <style scoped>
 .empty {
-    margin-top: 16px;
-    color: #6b7280;
+    padding: 2rem;
+    text-align: center;
+    background: var(--color-background);
+    border-radius: 8px;
+    margin-top: 1rem;
+    color: var(--color-text-secondary);
 }
 
 .empty.erro {
-    color: #b91c1c;
+    color: var(--color-danger);
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 1rem;
+}
+
+.empty-state p {
+    width: 100%;
+    margin: 0;
+    padding: 2rem;
+    text-align: center;
+    background: var(--color-background);
+    border-radius: 8px;
+    color: var(--color-text-secondary);
+}
+
+.empty-state button {
+    width: 170px;
 }
 
 .modal-content-input {

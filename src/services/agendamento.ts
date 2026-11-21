@@ -29,7 +29,7 @@ export async function criarAgendamentoDoador(
   token: string
 ): Promise<void> {
   await apiRequest(
-    '/Agendamentos',
+    '/Agendamento',
     {
       method: 'POST',
       body: JSON.stringify(request),
@@ -43,7 +43,7 @@ export async function criarAgendamentoHemocentro(
   token: string
 ): Promise<void> {
   await apiRequest(
-    '/Agendamentos/hemocentro',
+    '/Agendamento/hemocentro',
     {
       method: 'POST',
       body: JSON.stringify(request),
@@ -54,7 +54,7 @@ export async function criarAgendamentoHemocentro(
 
 export async function listarAgendamentosDoador(token: string): Promise<Agendamento[]> {
   return apiRequest(
-    '/Agendamentos/me',
+    '/Agendamento/me',
     { method: 'GET' },
     token
   );
@@ -75,8 +75,8 @@ export async function listarAgendamentosHemocentro(
   }
 
   const url = params.toString()
-    ? `/Agendamentos/hemocentro?${params.toString()}`
-    : '/Agendamentos/hemocentro';
+    ? `/Agendamento/hemocentro?${params.toString()}`
+    : '/Agendamento/hemocentro';
 
   const headers: Record<string, string> = {};
   if (filtros.documento) {
@@ -98,8 +98,23 @@ export async function cancelarAgendamento(
   token: string
 ): Promise<void> {
   await apiRequest(
-    `/Agendamentos/${agendamentoId}/cancelar`,
+    `/Agendamento/${agendamentoId}/cancelar`,
     { method: 'PATCH' },
+    token
+  );
+}
+
+export async function reagendarAgendamento(
+  agendamentoId: string,
+  agendadoPara: string,
+  token: string
+): Promise<void> {
+  await apiRequest(
+    `/Agendamento/${agendamentoId}/reagendar`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ agendadoPara }),
+    },
     token
   );
 }
@@ -109,7 +124,7 @@ export async function concluirAgendamento(
   token: string
 ): Promise<void> {
   await apiRequest(
-    `/Agendamentos/${agendamentoId}/concluir`,
+    `/Agendamento/${agendamentoId}/concluir`,
     { method: 'PATCH' },
     token
   );

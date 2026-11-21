@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomDialog from '../../components/CustomDialog.vue';
+import CustomDatePicker from '../../components/CustomDatePicker.vue';
 import CustomInput from '../../components/CustomInput.vue';
 import { useViaCep } from '../../composables/useViaCep';
 import { useToast } from '../../composables/useToast';
@@ -29,6 +30,9 @@ const form = ref({
 });
 
 const mensagemErro = (e: unknown, padrao: string) => (e as { message?: string }).message || padrao;
+
+const anoAtual = new Date().getFullYear();
+const anosNascimento = { min: anoAtual - 120, max: anoAtual };
 
 const toggleModal = () => {
     open.value = !open.value;
@@ -124,8 +128,8 @@ onMounted(carregarPerfil);
         </div>
 
         <div class="template-dois-inputs">
-            <CustomInput label="Data de Nascimento" id="data-nascimento" placeholder="" type="date"
-                v-model="form.dataNascimento" />
+            <CustomDatePicker title="Data de Nascimento" id="data-nascimento" v-model="form.dataNascimento"
+                :year-range="anosNascimento" />
         </div>
 
         <div class="template-dois-inputs">

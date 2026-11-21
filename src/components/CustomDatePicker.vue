@@ -9,6 +9,7 @@ const props = defineProps<{
     title: string;
     modelOpen?: boolean;
     modelValue?: string;
+    yearRange?: { min: number; max: number };
 }>();
 
 const emit = defineEmits<{
@@ -38,6 +39,16 @@ const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
+
+// Quando yearRange é informado, o ano pode ser escolhido direto (útil para datas distantes, como nascimento)
+const yearOptions = computed<number[]>(() => {
+    if (!props.yearRange) return [];
+    const years: number[] = [];
+    for (let year = props.yearRange.max; year >= props.yearRange.min; year--) {
+        years.push(year);
+    }
+    return years;
+});
 
 
 const navigateMonth = (direction: 'prev' | 'next'): void => {
@@ -184,7 +195,12 @@ watch(isCalendarOpen, (value) => {
                     <IconButton :icon="PhCaretLeft" secondary aria-label="Mês Anterior"
                         @click.stop="navigateMonth('prev')" />
                     <h2 class="current-month-year">
-                        {{ monthNames[currentMonthIndex] }} {{ currentYear }}
+                        {{ monthNames[currentMonthIndex] }}
+                        <select v-if="yearOptions.length" v-model.number="currentYear" class="year-select poppins-regular"
+                            aria-label="Ano">
+                            <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
+                        </select>
+                        <template v-else>{{ currentYear }}</template>
                     </h2>
                     <IconButton :icon="PhCaretRight" secondary aria-label="Próximo Mês"
                         @click.stop="navigateMonth('next')" />
@@ -286,6 +302,22 @@ watch(isCalendarOpen, (value) => {
     font-size: 1.1em;
     font-weight: bold;
     margin: 0;
+}
+
+.year-select {
+    margin-left: 4px;
+    padding: 2px 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+    border: 1px solid var(--input-border-color);
+    border-radius: 6px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.year-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
 }
 
 .calendar-grid {
