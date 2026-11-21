@@ -45,9 +45,11 @@ defineProps<{
 .view-container {
     width: 100%;
     height: 100%;
+    min-height: 0;
     background-color: #FFFFFF;
     border-radius: 40px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     padding: 60px;
+    overflow-y: auto;
 }
 </style>
