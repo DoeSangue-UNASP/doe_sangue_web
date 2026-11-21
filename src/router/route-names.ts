@@ -12,6 +12,7 @@ export const RouteNames = {
     HOME_DOADOR: "home-doador",
     BUSCAR_HEMOCENTROS_DOADOR: "buscar-hemocentros",
     MINHAS_DOACOES: "minhas-doacoes",
+    DETALHES_DOACAO: "detalhes-doacao",
     AGENDAMENTOS_DOADOR: "agendamentos-doador",
     MEUS_DADOS_DOADOR: "meus-dados-doador" ,
 
@@ -22,5 +23,9 @@ export const RouteNames = {
     BOLSAS_SANGUE_HEMOCENTRO: "bolsas-de-sangue",
     CRIAR_BOLSA_SANGUE_HEMOCENTRO: "nova-bolsa-sangue",
     EDITAR_BOLSA_SANGUE_HEMOCENTRO: "editar-bolsa-de-sangue",
-    AGENDAMENTOS_HEMOCENTRO: "agendamentos-hemocentro"
+    AGENDAMENTOS_HEMOCENTRO: "agendamentos-hemocentro",
+    DOACOES_HEMOCENTRO: "doacoes-hemocentro",
+    DETALHES_DOACAO_HEMOCENTRO: "detalhes-doacao-hemocentro",
+    REGISTRAR_DOACAO: "registrar-doacao",
+    CADASTRAR_LEAD: "cadastrar-lead",
 } as const

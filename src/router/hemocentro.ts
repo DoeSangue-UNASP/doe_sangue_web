@@ -10,6 +10,9 @@ import ViewCadastroLead from "../views/hemocentro/ViewCadastroLead.vue";
 import ViewGerenciarDoadores from "../views/hemocentro/ViewGerenciarDoadores.vue";
 import ViewAgendarDoacao from "../views/hemocentro/ViewAgendarDoacao.vue";
 import ViewDetalhesDoador from "../views/hemocentro/ViewDetalhesDoador.vue";
+import ViewDoacoesHemocentro from "../views/hemocentro/ViewDoacoesHemocentro.vue";
+import ViewDetalhesDoacaoHemocentro from "../views/hemocentro/ViewDetalhesDoacaoHemocentro.vue";
+import ViewRegistrarDoacao from "../views/hemocentro/ViewRegistrarDoacao.vue";
 
 export const routesHemocentro : RouteRecordRaw[] = [
   {
@@ -71,6 +74,21 @@ export const routesHemocentro : RouteRecordRaw[] = [
     path: '/hemocentro/agendamentos',
     name: RouteNames.AGENDAMENTOS_HEMOCENTRO,
     component: ViewAgendamentos
+  },
+  {
+    path: '/hemocentro/doacoes',
+    name: RouteNames.DOACOES_HEMOCENTRO,
+    component: ViewDoacoesHemocentro
+  },
+  {
+    path: '/hemocentro/doacoes/:id',
+    name: RouteNames.DETALHES_DOACAO_HEMOCENTRO,
+    component: ViewDetalhesDoacaoHemocentro
+  },
+  {
+    path: '/hemocentro/registrar-doacao',
+    name: RouteNames.REGISTRAR_DOACAO,
+    component: ViewRegistrarDoacao
   },
   
 ]
