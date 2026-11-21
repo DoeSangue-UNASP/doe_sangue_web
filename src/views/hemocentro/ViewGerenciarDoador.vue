@@ -5,10 +5,15 @@ import { useRoute, useRouter } from 'vue-router';
 import CustomDialog from '../../components/CustomDialog.vue';
 import CustomInput from '../../components/CustomInput.vue';
 import CustomButton from '../../components/CustomButton.vue';
+import { useViaCep } from '../../composables/useViaCep';
+import { useToast } from '../../composables/useToast';
 
 const route = useRoute();
 
 const router = useRouter();
+
+const { buscarEnderecoPorCep, carregandoCep, erroCep } = useViaCep();
+const { sucesso, erro } = useToast();
 
 const form = ref({
     nomeCompleto: '',
@@ -37,6 +42,25 @@ const isViewMode = computed(() => {
 });
 
 const isEditing = ref(false);
+
+const preencherEnderecoViaCep = async () => {
+    if (!form.value.cep.trim()) {
+        erro('Digite um CEP');
+        return;
+    }
+
+    const endereco = await buscarEnderecoPorCep(form.value.cep);
+    
+    if (endereco) {
+        form.value.rua = endereco.rua;
+        form.value.bairro = endereco.bairro;
+        form.value.cidade = endereco.cidade;
+        form.value.estado = endereco.estado;
+        sucesso('Endereço preenchido com sucesso!');
+    } else if (erroCep.value) {
+        erro(erroCep.value);
+    }
+};
 
 const inputDisabled = computed(() => {
     if (isViewMode.value && !isEditing.value) return true;
@@ -115,7 +139,25 @@ onMounted(() => {
         </div>
 
         <div class="template-endereco">
-            <CustomInput id="cep" class="cep" label="CEP" v-model="form.cep" :disabled="inputDisabled" />
+            <div class="cep-input-wrapper-gerenciar">
+                <CustomInput 
+                    id="cep" 
+                    class="cep" 
+                    label="CEP" 
+                    v-model="form.cep" 
+                    :disabled="inputDisabled || carregandoCep"
+                />
+                <button 
+                    type="button"
+                    @click="preencherEnderecoViaCep"
+                    :disabled="carregandoCep || inputDisabled"
+                    class="btn-buscar-cep-gerenciar"
+                    v-if="!inputDisabled"
+                >
+                    {{ carregandoCep ? 'Buscando...' : 'Buscar' }}
+                </button>
+            </div>
+            <p v-if="erroCep" class="erro-cep-gerenciar">{{ erroCep }}</p>
             <CustomInput id="bairro" class="bairro" label="Bairro" v-model="form.bairro" :disabled="inputDisabled" />
             <CustomInput id="cidade" class="cidade" label="Cidade" v-model="form.cidade" :disabled="inputDisabled" />
             <CustomInput id="estado" class="estado" label="Estado" v-model="form.estado" :disabled="inputDisabled" />
@@ -193,8 +235,47 @@ onMounted(() => {
 
 .template-endereco {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 20px;
+}
+
+.cep-input-wrapper-gerenciar {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.cep-input-wrapper-gerenciar :deep(.custom-input) {
+    flex: 1;
+}
+
+.btn-buscar-cep-gerenciar {
+    padding: 8px 16px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    height: 40px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-buscar-cep-gerenciar:hover:not(:disabled) {
+    background-color: #c41e3a;
+}
+
+.btn-buscar-cep-gerenciar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.erro-cep-gerenciar {
+    color: #b91c1c;
+    font-size: 0.875rem;
+    margin: 0;
 }
 
 .cep {

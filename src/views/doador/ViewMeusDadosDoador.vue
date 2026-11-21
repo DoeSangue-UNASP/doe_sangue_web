@@ -2,12 +2,44 @@
 import { ref } from 'vue';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomDialog from '../../components/CustomDialog.vue';
-import CustomInput from '../../components/CustomInput.vue';;
+import CustomInput from '../../components/CustomInput.vue';
+import { useViaCep } from '../../composables/useViaCep';
+import { useToast } from '../../composables/useToast';
 
 const open = ref<boolean>(false);
+const { buscarEnderecoPorCep, carregandoCep, erroCep } = useViaCep();
+const { sucesso, erro } = useToast();
+
+const form = ref({
+    cep: '',
+    rua: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+});
 
 const toggleModal = () => {
     open.value = !open.value;
+};
+
+const preencherEnderecoViaCep = async () => {
+    if (!form.value.cep.trim()) {
+        erro('Digite um CEP');
+        return;
+    }
+
+    const endereco = await buscarEnderecoPorCep(form.value.cep);
+    
+    if (endereco) {
+        form.value.rua = endereco.rua;
+        form.value.bairro = endereco.bairro;
+        form.value.cidade = endereco.cidade;
+        form.value.estado = endereco.estado;
+        sucesso('Endereço preenchido com sucesso!');
+    } else if (erroCep.value) {
+        erro(erroCep.value);
+    }
 };
 </script>
 
@@ -41,10 +73,45 @@ const toggleModal = () => {
         </div>
 
         <div class="template-endereco">
-            <CustomInput class="cep" label="CEP" id="cep" placeholder="" />
-            <CustomInput class="bairro" label="Bairro" id="bairro" placeholder="" />
-            <CustomInput class="cidade" label="Cidade" id="cidade" placeholder="" />
-            <CustomInput class="estado" label="Estado" id="estado" placeholder="" />
+            <div class="cep-input-wrapper-endereco">
+                <CustomInput 
+                    class="cep" 
+                    label="CEP" 
+                    id="cep" 
+                    placeholder="" 
+                    v-model="form.cep"
+                />
+                <button 
+                    type="button"
+                    @click="preencherEnderecoViaCep"
+                    :disabled="carregandoCep"
+                    class="btn-buscar-cep-endereco"
+                >
+                    {{ carregandoCep ? 'Buscando...' : 'Buscar' }}
+                </button>
+            </div>
+            <p v-if="erroCep" class="erro-cep-endereco">{{ erroCep }}</p>
+            <CustomInput 
+                class="bairro" 
+                label="Bairro" 
+                id="bairro" 
+                placeholder="" 
+                v-model="form.bairro"
+            />
+            <CustomInput 
+                class="cidade" 
+                label="Cidade" 
+                id="cidade" 
+                placeholder="" 
+                v-model="form.cidade"
+            />
+            <CustomInput 
+                class="estado" 
+                label="Estado" 
+                id="estado" 
+                placeholder="" 
+                v-model="form.estado"
+            />
         </div>
 
         <div class="save-btn">
@@ -94,8 +161,47 @@ const toggleModal = () => {
 
 .template-endereco {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 20px;
+}
+
+.cep-input-wrapper-endereco {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.cep-input-wrapper-endereco :deep(.custom-input) {
+    flex: 1;
+}
+
+.btn-buscar-cep-endereco {
+    padding: 8px 16px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    height: 40px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-buscar-cep-endereco:hover:not(:disabled) {
+    background-color: #c41e3a;
+}
+
+.btn-buscar-cep-endereco:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.erro-cep-endereco {
+    color: #b91c1c;
+    font-size: 0.875rem;
+    margin: 0;
 }
 
 .cep {

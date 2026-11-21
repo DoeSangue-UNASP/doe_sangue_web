@@ -10,10 +10,12 @@ import { PhX } from '@phosphor-icons/vue';
 import IconButton from '../components/IconButton.vue';
 import { apiRequest } from '../services/api';
 import { useToast } from '../composables/useToast';
+import { useViaCep } from '../composables/useViaCep';
 
 const router = useRouter();
 const route = useRoute();
 const { sucesso, erro } = useToast();
+const { buscarEnderecoPorCep, carregandoCep, erroCep } = useViaCep();
 
 const perfil = ref<'doador' | 'hemocentro'>(route.query.perfil === 'hemocentro' ? 'hemocentro' : 'doador');
 const form = ref({
@@ -24,6 +26,25 @@ const form = ref({
 });
 const erroFormulario = ref('');
 const carregando = ref(false);
+
+const preencherEnderecoViaCep = async () => {
+    if (!form.value.cep.trim()) {
+        erro('Digite um CEP');
+        return;
+    }
+
+    const endereco = await buscarEnderecoPorCep(form.value.cep);
+    
+    if (endereco) {
+        form.value.rua = endereco.rua;
+        form.value.bairro = endereco.bairro;
+        form.value.cidade = endereco.cidade;
+        form.value.estado = endereco.estado;
+        sucesso('Endereço preenchido com sucesso!');
+    } else if (erroCep.value) {
+        erro(erroCep.value);
+    }
+};
 
 const cadastrar = async () => {
     erroFormulario.value = '';
@@ -116,7 +137,18 @@ const cadastrar = async () => {
                 <CustomInput label="Confirme a senha" id="confirmar-senha" v-model="form.confirmarSenha" type="password" />
                 <p>A senha deve ter ao menos 6 caracteres, incluindo letra maiúscula, minúscula, número e símbolo.</p>
                 <h2>Endereço</h2>
-                <CustomInput label="CEP" id="cep" v-model="form.cep" />
+                <div class="cep-input-wrapper">
+                    <CustomInput label="CEP" id="cep" v-model="form.cep" />
+                    <button 
+                        type="button"
+                        @click="preencherEnderecoViaCep"
+                        :disabled="carregandoCep"
+                        class="btn-buscar-cep"
+                    >
+                        {{ carregandoCep ? 'Buscando...' : 'Buscar' }}
+                    </button>
+                </div>
+                <p v-if="erroCep" class="erro-cep">{{ erroCep }}</p>
                 <CustomInput label="Rua" id="rua" v-model="form.rua" />
                 <CustomInput label="Número" id="numero" v-model="form.numero" />
                 <CustomInput label="Bairro" id="bairro" v-model="form.bairro" />
@@ -168,12 +200,10 @@ const cadastrar = async () => {
     background-color: var(--primary-color);
 
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
 
     width: 50%;
-    overflow-y: auto;
-    padding: 45px 20px;
 
     border-radius: 40px 0 0 40px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
@@ -218,7 +248,9 @@ const cadastrar = async () => {
     width: min(100%, 400px);
     max-height: calc(100vh - 240px);
     overflow-y: auto;
-    padding-right: 8px;
+    overflow-x: hidden;
+    padding-right: 12px;
+    margin-right: -12px;
 }
 
 .fields::-webkit-scrollbar {
@@ -250,6 +282,46 @@ const cadastrar = async () => {
 .fields p {
     font-size: 0.875rem;
     color: var(--color-text-secondary);
+    margin-top: -8px;
+    margin-bottom: 0;
+}
+
+.cep-input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.cep-input-wrapper :deep(.custom-input) {
+    flex: 1;
+}
+
+.btn-buscar-cep {
+    padding: 8px 16px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    height: 40px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-buscar-cep:hover:not(:disabled) {
+    background-color: #c41e3a;
+}
+
+.btn-buscar-cep:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.erro-cep {
+    color: #b91c1c;
+    font-size: 0.875rem;
     margin-top: -8px;
     margin-bottom: 0;
 }
