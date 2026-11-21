@@ -6,17 +6,84 @@ import NavbarLanding from '../../components/NavbarLanding.vue';
 import { useRouter } from 'vue-router';
 import { RouteNames } from '../../router/route-names';
 import CustomDialog from '../../components/CustomDialog.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import CustomInput from '../../components/CustomInput.vue';
 import CustomTextarea from '../../components/CustomTextarea.vue';
+import * as depoimentoService from '../../services/depoimento';
+import { ApiError } from '../../services/api';
+import { useAuth } from '../../composables/useAuth';
+import { useToast } from '../../composables/useToast';
 
 const router = useRouter();
+const { token } = useAuth();
+const { sucesso, erro } = useToast();
 
 const open = ref<boolean>(false);
+const depoimentos = ref<depoimentoService.Depoimento[]>([]);
+const carregandoDepoimentos = ref(true);
+const erroDepoimentos = ref('');
+
+const formulario = ref({
+    titulo: '',
+    conteudo: '',
+});
+const salvando = ref(false);
+const erroFormulario = ref('');
 
 const toggleModal = () => {
     open.value = !open.value;
+    if (!open.value) {
+        formulario.value = { titulo: '', conteudo: '' };
+        erroFormulario.value = '';
+    }
 };
+
+async function carregarDepoimentos() {
+    try {
+        carregandoDepoimentos.value = true;
+        erroDepoimentos.value = '';
+        const result = await depoimentoService.listarDepoimentos();
+        depoimentos.value = result;
+    } catch (e) {
+        const error = e as ApiError;
+        erroDepoimentos.value = error.message || 'Erro ao carregar depoimentos';
+    } finally {
+        carregandoDepoimentos.value = false;
+    }
+}
+
+async function enviarDepoimento() {
+    if (!formulario.value.titulo.trim() || !formulario.value.conteudo.trim()) {
+        erroFormulario.value = 'Preencha todos os campos';
+        erro('Preencha todos os campos obrigatórios');
+        return;
+    }
+
+    try {
+        salvando.value = true;
+        erroFormulario.value = '';
+
+        await depoimentoService.criarDepoimento({
+            titulo: formulario.value.titulo.trim(),
+            conteudo: formulario.value.conteudo.trim(),
+        }, token.value);
+
+        sucesso('Depoimento enviado com sucesso!');
+        toggleModal();
+        await carregarDepoimentos();
+    } catch (e) {
+        const error = e as ApiError;
+        const mensagem = error.message || 'Erro ao enviar depoimento';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
+    } finally {
+        salvando.value = false;
+    }
+}
+
+onMounted(() => {
+    carregarDepoimentos();
+});
 </script>
 
 <template>
@@ -28,25 +95,23 @@ const toggleModal = () => {
                 <p>Conectamos doadores voluntários com hemocentros credenciados através de uma plataforma segura,
                     moderna e eficiente, contribuindo para salvar vidas em todo o Brasil.</p>
                 <div class="welcome-buttons">
-                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR, query: { perfil: 'hemocentro' } })" label="Sou Hemocentro"
-                        secondary />
-                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR, query: { perfil: 'doador' } })" label="Quero Doar Sangue" />
+                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR, query: { perfil: 'hemocentro' } })"
+                        label="Sou Hemocentro" secondary />
+                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR, query: { perfil: 'doador' } })"
+                        label="Quero Doar Sangue" />
                 </div>
             </section>
 
-            <section class="depoimentos">
+            <section v-if="!carregandoDepoimentos && depoimentos.length > 0" class="depoimentos">
                 <h1 class="poppins-regular">Depoimentos</h1>
                 <p>Confira os depoimentos inspiradores de doadores e receptores de sangue!</p>
                 <div class="cards-depoimentos">
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
-                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
-                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
-                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
-                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
-                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
+                    <CardDepoimento v-for="dep in depoimentos" :key="dep.id" :nome="dep.autor?.nome || 'Anônimo'"
+                        :cidade="dep.autor?.nome ? 'Brasil' : ''"
+                        :depoimento="depoimentoService.truncarTexto(dep.conteudo, 180)" />
                 </div>
+            </section>
+            <div class="novo-depoimento">
                 <div class="card-novo-depoimento">
                     <PhHeart size="50" />
                     <h1 class="card-novo-depoimento-title">Compartilhe sua experiência</h1>
@@ -55,7 +120,7 @@ const toggleModal = () => {
 
                     <CustomButton @click="toggleModal" label="Compartilhe sua história!" secondary red-font-color />
                 </div>
-            </section>
+            </div>
         </main>
     </div>
     <CustomDialog v-model="open">
@@ -66,14 +131,14 @@ const toggleModal = () => {
                 <p>Sua experiência pode inspirar outras pessoas a doarem sangue e salvarem vidas!</p>
             </div>
             <div class="form">
-                <CustomInput label="Nome" id="nome" model-value="" placeholder="Nome" />
-                <div class="template-input-cidade-estado">
-                    <CustomInput class="input-width" label="Cidade" id="cidade" model-value=""
-                        placeholder="São Paulo" />
-                    <CustomInput class="input-width" label="Estado" id="estado" model-value="" placeholder="SP" />
+                <div v-if="erroFormulario" class="error-message">
+                    {{ erroFormulario }}
                 </div>
-                <CustomTextarea label="Seu Depoimento" id="depoimento" model-value="" placeholder="depoimento..." />
-                <CustomButton label="Enviar" @click="toggleModal" />
+                <CustomInput id="titulo" label="Título" v-model="formulario.titulo"
+                    placeholder="Ex: Minha primeira doação salvou vidas" />
+                <CustomTextarea id="depoimento" label="Seu Depoimento" v-model="formulario.conteudo"
+                    placeholder="Compartilhe sua experiência..." />
+                <CustomButton label="Enviar" @click="enviarDepoimento" :disabled="salvando" />
             </div>
         </template>
     </CustomDialog>
@@ -126,6 +191,12 @@ const toggleModal = () => {
 .welcome-buttons button {
     width: 200px;
     font-size: 16px;
+}
+
+.novo-depoimento {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .depoimentos {
@@ -193,5 +264,13 @@ const toggleModal = () => {
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+.error-message {
+    padding: 0.75rem;
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--color-danger);
+    border-radius: 4px;
+    font-size: 0.875rem;
 }
 </style>

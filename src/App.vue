@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router';
 import { RouteNames } from './router/route-names';
 import LayoutLogado from './layouts/LayoutLogado.vue';
+import ToastContainer from './components/ToastContainer.vue';
 
 const route = useRoute();
 const simpleViews = [
@@ -17,6 +18,7 @@ const simpleViews = [
 </script>
 
 <template>
+    <ToastContainer />
     <div v-if="simpleViews.includes(route.name as string)">
         <RouterView />
     </div>
