@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomInput from '../../components/CustomInput.vue';
+import CustomSelect from '../../components/CustomSelect.vue';
 import Badge from '../../components/Badge.vue';
 import { useAuth } from '../../composables/useAuth';
 import { useToast } from '../../composables/useToast';
@@ -13,6 +14,17 @@ import { ApiError } from '../../services/api';
 const router = useRouter();
 const { token } = useAuth();
 const { sucesso, erro } = useToast();
+
+const tiposSanguineoOptions = [
+    { value: 'O+', label: 'O+' },
+    { value: 'O-', label: 'O-' },
+    { value: 'A+', label: 'A+' },
+    { value: 'A-', label: 'A-' },
+    { value: 'B+', label: 'B+' },
+    { value: 'B-', label: 'B-' },
+    { value: 'AB+', label: 'AB+' },
+    { value: 'AB-', label: 'AB-' },
+];
 
 const carregando = ref(false);
 const salvando = ref(false);
@@ -338,17 +350,12 @@ onMounted(() => {
 
                             <div class="bolsa-fields">
                                 <div class="field">
-                                    <label>Tipo Sanguíneo</label>
-                                    <select v-model="bolsa.tipoSanguineo">
-                                        <option>O+</option>
-                                        <option>O-</option>
-                                        <option>A+</option>
-                                        <option>A-</option>
-                                        <option>B+</option>
-                                        <option>B-</option>
-                                        <option>AB+</option>
-                                        <option>AB-</option>
-                                    </select>
+                                    <CustomSelect 
+                                        :id="`tipo-sangue-${index}`"
+                                        label="Tipo Sanguíneo"
+                                        v-model="bolsa.tipoSanguineo"
+                                        :options="tiposSanguineoOptions"
+                                    />
                                 </div>
                                 <div class="field">
                                     <label>Volume (ml)</label>
