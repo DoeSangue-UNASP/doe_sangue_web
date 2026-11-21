@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import type { Plugin } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'http'
@@ -45,6 +45,18 @@ function overpassProxyPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
-  plugins: [vue(), overpassProxyPlugin()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  return {
+    plugins: [vue(), overpassProxyPlugin()],
+    server: {
+      proxy: {
+        '/backend/api': {
+          target: env.VITE_BACKEND_TARGET || 'http://localhost:5283',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/backend\/api/, '/api'),
+        },
+      },
+    },
+  };
 })

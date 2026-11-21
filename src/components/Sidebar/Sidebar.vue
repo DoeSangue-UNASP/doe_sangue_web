@@ -6,6 +6,7 @@ import { ref } from 'vue';
 import CustomButton from '../CustomButton.vue';
 import { useRouter } from 'vue-router';
 import { RouteNames } from '../../router/route-names';
+import { sair } from '../../services/auth';
 
 const router = useRouter();
 
@@ -13,6 +14,11 @@ const open = ref<boolean>(false);
 
 const toggleModal = () => {
     open.value = !open.value;
+};
+
+const confirmarSaida = () => {
+    sair();
+    router.push({ name: RouteNames.LOGIN });
 };
 </script>
 
@@ -40,7 +46,7 @@ const toggleModal = () => {
         <template #footer>
             <div class="modal-footer">
                 <CustomButton label="Cancelar" secondary @click="toggleModal" />
-                <CustomButton label="Confirmar" @click="router.push({ name: RouteNames.LOGIN })" />
+                <CustomButton label="Confirmar" @click="confirmarSaida" />
             </div>
         </template>
     </CustomDialog>

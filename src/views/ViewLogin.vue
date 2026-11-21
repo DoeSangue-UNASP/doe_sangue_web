@@ -3,19 +3,40 @@ import { ref } from 'vue';
 import CustomButton from '../components/CustomButton.vue';
 import CustomInput from '../components/CustomInput.vue';
 import LinkButton from '../components/LinkButton.vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { RouteNames } from '../router/route-names';
 import IconButton from '../components/IconButton.vue';
 import { PhX } from '@phosphor-icons/vue';
+import { entrar } from '../services/auth';
+import { ApiError } from '../services/api';
 
 const router = useRouter();
+const route = useRoute();
 
-const email = ref<string>();
-const senha = ref<string>();
+const email = ref('');
+const senha = ref('');
+const erro = ref('');
+const carregando = ref(false);
 
-const login = () => {
-    router.push({ name: RouteNames.HOME_DOADOR })
-}
+const login = async () => {
+    erro.value = '';
+    if (!email.value.trim() || !senha.value) {
+        erro.value = 'Informe seu e-mail e sua senha.';
+        return;
+    }
+
+    carregando.value = true;
+    try {
+        const perfil = await entrar(email.value.trim(), senha.value);
+        await router.push({ name: perfil === 'DOADOR' ? RouteNames.HOME_DOADOR : RouteNames.HOME_HEMOCENTRO });
+    } catch (error) {
+        erro.value = error instanceof ApiError && error.status === 401
+            ? 'E-mail ou senha inválidos.'
+            : error instanceof Error ? error.message : 'Não foi possível entrar.';
+    } finally {
+        carregando.value = false;
+    }
+};
 
 const cadastrar = () => {
     router.push({ name: RouteNames.CADASTRAR })
@@ -35,14 +56,18 @@ const cadastrar = () => {
                 <h1 class="poppins-bold">Entrar</h1>
             </div>
 
-            <div class="fields">
-                <CustomInput label="E-mail ou CPF" id="email-cpf" :model-value="email" placeholder="email@email.com" />
-                <CustomInput label="Senha" id="senha" :model-value="senha" placeholder="******" type="password" />
+            <form class="fields" @submit.prevent="login">
+                <p v-if="route.query.cadastro === 'concluido'" role="status">Cadastro realizado. Entre com seu e-mail e senha.</p>
+                <p v-if="route.query.sessao === 'expirada'" role="status">Sua sessão expirou. Entre novamente.</p>
+                <p v-if="route.query.sessao === 'indisponivel'" role="alert">Não foi possível verificar sua sessão. Verifique a conexão com a API.</p>
+                <CustomInput label="E-mail" id="email" v-model="email" placeholder="email@email.com" type="email" />
+                <CustomInput label="Senha" id="senha" v-model="senha" placeholder="******" type="password" />
+                <p v-if="erro" class="erro" role="alert">{{ erro }}</p>
                 <div class="form-button">
-                    <CustomButton label="Entrar" @click="login()" />
+                    <CustomButton :label="carregando ? 'Entrando...' : 'Entrar'" :disabled="carregando" />
                     <LinkButton label="Esqueci minha senha" :route-name="RouteNames.RECUPERAR_SENHA" />
                 </div>
-            </div>
+            </form>
 
             <div class="dont-have-account">
                 <p>Ainda não tem uma conta?</p>
@@ -55,6 +80,10 @@ const cadastrar = () => {
 </template>
 
 <style scoped>
+.erro {
+    color: #b91c1c;
+}
+
 .view-login {
     background-color: var(--background-color);
 

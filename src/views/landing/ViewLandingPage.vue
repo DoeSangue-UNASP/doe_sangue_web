@@ -28,9 +28,9 @@ const toggleModal = () => {
                 <p>Conectamos doadores voluntários com hemocentros credenciados através de uma plataforma segura,
                     moderna e eficiente, contribuindo para salvar vidas em todo o Brasil.</p>
                 <div class="welcome-buttons">
-                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR })" label="Sou Hemocentro"
+                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR, query: { perfil: 'hemocentro' } })" label="Sou Hemocentro"
                         secondary />
-                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR })" label="Quero Doar Sangue" />
+                    <CustomButton @click="router.push({ name: RouteNames.CADASTRAR, query: { perfil: 'doador' } })" label="Quero Doar Sangue" />
                 </div>
             </section>
 

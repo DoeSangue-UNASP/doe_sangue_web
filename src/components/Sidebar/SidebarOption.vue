@@ -17,7 +17,7 @@ const isSelected = computed(() => Boolean(props.selected));
 const iconColor = computed(() => (isSelected.value ? '#FFFFFF' : 'var(--secondary-color)'));
 
 const goToRoute = () => {
-    router.push({ name: props.route });
+    if (props.route) router.push({ name: props.route });
 };
 </script>
 
