@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
+import CustomSelect from '../../components/CustomSelect.vue';
 import Badge from '../../components/Badge.vue';
 import { useAuth } from '../../composables/useAuth';
 import { useToast } from '../../composables/useToast';
@@ -12,6 +13,12 @@ const router = useRouter();
 const route = useRoute();
 const { token } = useAuth();
 const { sucesso, erro } = useToast();
+
+const statusOptions = [
+    { value: 'PENDENTE', label: 'Pendente' },
+    { value: 'REALIZADA', label: 'Realizada' },
+    { value: 'CANCELADA', label: 'Cancelada' },
+];
 
 const doacao = ref<doacaoService.Doacao | null>(null);
 const carregando = ref(true);
@@ -158,12 +165,13 @@ onMounted(() => {
                                 {{ doacaoService.formatarStatus(doacao.status) }}
                             </Badge>
                         </div>
-                        <div v-else class="select-wrapper">
-                            <select v-model="novaStatus">
-                                <option value="PENDENTE">Pendente</option>
-                                <option value="CONCLUIDA">Concluída</option>
-                                <option value="CANCELADA">Cancelada</option>
-                            </select>
+                        <div v-else>
+                            <CustomSelect 
+                                id="status-doacao"
+                                label="Status"
+                                v-model="novaStatus"
+                                :options="statusOptions"
+                            />
                         </div>
                     </div>
                 </div>
@@ -327,20 +335,6 @@ onMounted(() => {
     margin: 0;
     color: var(--color-text);
     font-size: 1rem;
-}
-
-.select-wrapper {
-    display: flex;
-    flex-direction: column;
-}
-
-.select-wrapper select {
-    padding: 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background: white;
-    color: var(--color-text);
-    font-size: 0.875rem;
 }
 
 .edit-actions {
