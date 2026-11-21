@@ -17,7 +17,7 @@ const { token } = useAuth();
 const statusOptions = [
     { value: '', label: 'Todos os status' },
     { value: 'PENDENTE', label: 'Pendente' },
-    { value: 'REALIZADA', label: 'Realizada' },
+    { value: 'CONCLUIDA', label: 'Concluída' },
     { value: 'CANCELADA', label: 'Cancelada' },
 ];
 

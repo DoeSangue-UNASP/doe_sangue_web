@@ -77,7 +77,7 @@ const cadastrar = async () => {
         }
         : {
             cnpj: dados.cnpj.trim(), site: dados.site.trim(), nomeFantasia: dados.nomeFantasia.trim(),
-            abreEm: `2000-01-01T${dados.abreEm}:00`, fechaEm: `2000-01-01T${dados.fechaEm}:00`,
+            abreEm: `${dados.abreEm}:00`, fechaEm: `${dados.fechaEm}:00`,
             email: dados.email.trim(), senha: dados.senha, endereco,
         };
     carregando.value = true;

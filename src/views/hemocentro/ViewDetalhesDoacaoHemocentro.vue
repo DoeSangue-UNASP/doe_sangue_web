@@ -16,7 +16,7 @@ const { sucesso, erro } = useToast();
 
 const statusOptions = [
     { value: 'PENDENTE', label: 'Pendente' },
-    { value: 'REALIZADA', label: 'Realizada' },
+    { value: 'CONCLUIDA', label: 'Concluída' },
     { value: 'CANCELADA', label: 'Cancelada' },
 ];
 
