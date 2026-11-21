@@ -8,6 +8,9 @@ import ViewRecuperacaoSenha from "../views/recuperacaoSenha/ViewRecuperacaoSenha
 import ViewSobreNos from "../views/landing/ViewSobreNos.vue";
 import ViewPontosDeColeta from "../views/landing/ViewPontosDeColeta.vue";
 import ViewQuizAptidao from "../views/landing/ViewQuizAptidao.vue";
+import ViewDepoimentos from "../views/landing/ViewDepoimentos.vue";
+import ViewCriarDepoimento from "../views/landing/ViewCriarDepoimento.vue";
+import ViewDetalhesDepoimento from "../views/landing/ViewDetalhesDepoimento.vue";
 
 export const routesDeslogadas : RouteRecordRaw[] = [
     {
@@ -49,5 +52,20 @@ export const routesDeslogadas : RouteRecordRaw[] = [
       path: '/quiz-aptidao',
       name: RouteNames.QUIZ_APTIDAO,
       component: ViewQuizAptidao
+    },
+    {
+      path: '/depoimentos',
+      name: 'depoimentos',
+      component: ViewDepoimentos
+    },
+    {
+      path: '/depoimentos/novo',
+      name: 'criar-depoimento',
+      component: ViewCriarDepoimento
+    },
+    {
+      path: '/depoimentos/:id',
+      name: 'detalhes-depoimento',
+      component: ViewDetalhesDepoimento
     }
 ];
