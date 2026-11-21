@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import CustomButton from '../components/CustomButton.vue';
 import CustomInput from '../components/CustomInput.vue';
+import CustomSelect from '../components/CustomSelect.vue';
 import LinkButton from '../components/LinkButton.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { RouteNames } from '../router/route-names';
@@ -88,11 +89,15 @@ const cadastrar = async () => {
             <div class="title"><h1 class="poppins-bold">Cadastrar</h1></div>
 
             <form class="fields" @submit.prevent="cadastrar">
-                <label for="perfil">Tipo de cadastro</label>
-                <select id="perfil" v-model="perfil">
-                    <option value="doador">Doador</option>
-                    <option value="hemocentro">Hemocentro</option>
-                </select>
+                <CustomSelect 
+                    id="perfil" 
+                    label="Tipo de cadastro"
+                    v-model="perfil"
+                    :options="[
+                        { value: 'doador', label: 'Doador' },
+                        { value: 'hemocentro', label: 'Hemocentro' }
+                    ]"
+                />
                 <template v-if="perfil === 'doador'">
                     <CustomInput label="Nome completo" id="nome" v-model="form.nome" />
                     <CustomInput label="CPF" id="documento" v-model="form.documento" />
