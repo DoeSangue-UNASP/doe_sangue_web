@@ -2,118 +2,59 @@ import { apiRequest } from './api';
 
 export interface Depoimento {
   id: string;
-  texto: string;
   titulo: string;
-  nomeAutor?: string;
-  tipoSanguineo?: string;
-  dataDepoimento: string;
-  status: 'PENDENTE' | 'APROVADO' | 'REJEITADO';
-  avaliacoes: number;
+  conteudo: string;
   criadoEm: string;
-  atualizadoEm: string;
+  atualizadoEm?: string;
+  autor?: {
+    id: string;
+    email: string;
+    nome: string;
+  };
 }
 
 export interface CriarDepoimentoRequest {
   titulo: string;
-  texto: string;
-  nomeAutor?: string;
-  tipoSanguineo?: string;
-}
-
-export interface AtualizarDepoimentoRequest {
-  titulo?: string;
-  texto?: string;
-  status?: 'PENDENTE' | 'APROVADO' | 'REJEITADO';
-  avaliacoes?: number;
-}
-
-export interface FiltrosDepoimento {
-  status?: 'APROVADO';
-  pagina?: number;
-  limite?: number;
+  conteudo: string;
 }
 
 /**
- * Listar depoimentos aprovados (público)
+ * Listar depoimentos públicos (últimos 10)
+ * Não requer autenticação
  */
-export async function listarDepoimentos(
-  filtros: FiltrosDepoimento = {}
-): Promise<Depoimento[]> {
-  const params = new URLSearchParams();
-  
-  if (filtros.status) params.append('status', filtros.status);
-  if (filtros.pagina) params.append('pagina', filtros.pagina.toString());
-  if (filtros.limite) params.append('limite', filtros.limite.toString());
-
-  const url = params.toString()
-    ? `/Depoimentos?${params.toString()}`
-    : '/Depoimentos';
-
-  return apiRequest(url, { method: 'GET' });
+export async function listarDepoimentos(): Promise<Depoimento[]> {
+  return apiRequest('/Depoimento/publico', { method: 'GET' });
 }
 
 /**
  * Buscar depoimento por ID (público)
  */
-export async function buscarDepoimento(depoimentoId: string): Promise<Depoimento> {
+export async function obterDepoimento(depoimentoId: string): Promise<Depoimento> {
   return apiRequest(
-    `/Depoimentos/${depoimentoId}`,
+    `/Depoimento/${depoimentoId}`,
     { method: 'GET' }
   );
 }
 
 /**
- * Criar novo depoimento (anônimo)
- * Não requer autenticação
+ * Buscar depoimento por ID (público)
+ * @deprecated Use obterDepoimento instead
+ */
+export async function buscarDepoimento(depoimentoId: string): Promise<Depoimento> {
+  return obterDepoimento(depoimentoId);
+}
+
+/**
+ * Criar novo depoimento (requer autenticação)
  */
 export async function criarDepoimento(
-  request: CriarDepoimentoRequest
+  request: CriarDepoimentoRequest,
+  token: string
 ): Promise<Depoimento> {
   return apiRequest(
-    '/Depoimentos',
+    '/Depoimento',
     {
       method: 'POST',
-      body: JSON.stringify(request),
-    }
-  );
-}
-
-/**
- * Listar depoimentos para gerenciamento (requer autenticação)
- */
-export async function listarDepoimentosGerenciamento(
-  filtros: FiltrosDepoimento = {},
-  token: string
-): Promise<Depoimento[]> {
-  const params = new URLSearchParams();
-  
-  if (filtros.status) params.append('status', filtros.status);
-  if (filtros.pagina) params.append('pagina', filtros.pagina.toString());
-  if (filtros.limite) params.append('limite', filtros.limite.toString());
-
-  const url = params.toString()
-    ? `/Depoimentos/gerenciar?${params.toString()}`
-    : '/Depoimentos/gerenciar';
-
-  return apiRequest(
-    url,
-    { method: 'GET' },
-    token
-  );
-}
-
-/**
- * Atualizar depoimento (requer autenticação)
- */
-export async function atualizarDepoimento(
-  depoimentoId: string,
-  request: AtualizarDepoimentoRequest,
-  token: string
-): Promise<Depoimento> {
-  return apiRequest(
-    `/Depoimentos/${depoimentoId}`,
-    {
-      method: 'PUT',
       body: JSON.stringify(request),
     },
     token
@@ -121,43 +62,14 @@ export async function atualizarDepoimento(
 }
 
 /**
- * Deletar depoimento (requer autenticação)
+ * Listar todos os depoimentos (requer autenticação)
  */
-export async function deletarDepoimento(
-  depoimentoId: string,
+export async function listarTodosDepoimentos(
   token: string
-): Promise<void> {
-  await apiRequest(
-    `/Depoimentos/${depoimentoId}`,
-    { method: 'DELETE' },
-    token
-  );
-}
-
-/**
- * Aprovar depoimento (requer autenticação de admin)
- */
-export async function aprovarDepoimento(
-  depoimentoId: string,
-  token: string
-): Promise<Depoimento> {
+): Promise<Depoimento[]> {
   return apiRequest(
-    `/Depoimentos/${depoimentoId}/aprovar`,
-    { method: 'PATCH' },
-    token
-  );
-}
-
-/**
- * Rejeitar depoimento (requer autenticação de admin)
- */
-export async function rejeitarDepoimento(
-  depoimentoId: string,
-  token: string
-): Promise<Depoimento> {
-  return apiRequest(
-    `/Depoimentos/${depoimentoId}/rejeitar`,
-    { method: 'PATCH' },
+    '/Depoimento',
+    { method: 'GET' },
     token
   );
 }

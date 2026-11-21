@@ -3,25 +3,22 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomInput from '../../components/CustomInput.vue';
-import { PhArrowLeft } from '@phosphor-icons/vue';
 import * as depoimentoService from '../../services/depoimento';
 import { ApiError } from '../../services/api';
+import { useAuth } from '../../composables/useAuth';
 
 const router = useRouter();
+const { token } = useAuth();
 
 const formulario = ref({
     titulo: '',
-    texto: '',
-    nomeAutor: '',
-    tipoSanguineo: '',
+    conteudo: '',
 });
 
 const salvando = ref(false);
 const erro = ref('');
 const sucesso = ref(false);
 const erros = ref<Record<string, string>>({});
-
-const tiposSanguineo = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
 function validar(): boolean {
     erros.value = {};
@@ -30,16 +27,16 @@ function validar(): boolean {
         erros.value.titulo = 'Título é obrigatório';
     }
 
-    if (!formulario.value.texto.trim()) {
-        erros.value.texto = 'Depoimento é obrigatório';
+    if (!formulario.value.conteudo.trim()) {
+        erros.value.conteudo = 'Depoimento é obrigatório';
     }
 
-    if (formulario.value.texto.trim().length < 20) {
-        erros.value.texto = 'Depoimento deve ter pelo menos 20 caracteres';
+    if (formulario.value.conteudo.trim().length < 20) {
+        erros.value.conteudo = 'Depoimento deve ter pelo menos 20 caracteres';
     }
 
-    if (formulario.value.texto.trim().length > 2000) {
-        erros.value.texto = 'Depoimento não pode exceder 2000 caracteres';
+    if (formulario.value.conteudo.trim().length > 2000) {
+        erros.value.conteudo = 'Depoimento não pode exceder 2000 caracteres';
     }
 
     return Object.keys(erros.value).length === 0;
@@ -54,10 +51,8 @@ async function salvar() {
 
         await depoimentoService.criarDepoimento({
             titulo: formulario.value.titulo.trim(),
-            texto: formulario.value.texto.trim(),
-            nomeAutor: formulario.value.nomeAutor.trim() || undefined,
-            tipoSanguineo: formulario.value.tipoSanguineo || undefined,
-        });
+            conteudo: formulario.value.conteudo.trim(),
+        }, token.value);
 
         sucesso.value = true;
 
@@ -78,7 +73,7 @@ function voltar() {
     router.back();
 }
 
-const caracteresRestantes = () => 2000 - formulario.value.texto.length;
+const caracteresRestantes = () => 2000 - formulario.value.conteudo.length;
 </script>
 
 <template>
@@ -95,7 +90,7 @@ const caracteresRestantes = () => 2000 - formulario.value.texto.length;
         <main class="content">
             <div v-if="sucesso" class="success">
                 <h2>✓ Depoimento enviado com sucesso!</h2>
-                <p>Obrigado por compartilhar sua história. Seu depoimento será revisado e publicado em breve.</p>
+                <p>Obrigado por compartilhar sua história.</p>
                 <p style="font-size: 0.875rem; margin-top: 0.5rem;">Redirecionando...</p>
             </div>
 
@@ -108,6 +103,7 @@ const caracteresRestantes = () => 2000 - formulario.value.texto.length;
                     <label for="titulo">Título do Depoimento *</label>
                     <CustomInput 
                         id="titulo"
+                        label="Título do Depoimento"
                         v-model="formulario.titulo"
                         type="text"
                         placeholder="Ex: Minha primeira doação salvou vidas"
@@ -116,56 +112,28 @@ const caracteresRestantes = () => 2000 - formulario.value.texto.length;
                     <span v-if="erros.titulo" class="error-message">{{ erros.titulo }}</span>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="nomeAutor">Seu Nome (Opcional)</label>
-                        <CustomInput 
-                            id="nomeAutor"
-                            v-model="formulario.nomeAutor"
-                            type="text"
-                            placeholder="Deixe em branco para manter anônimo"
-                        />
-                        <p class="help-text">Sua privacidade é importante para nós</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tipoSanguineo">Tipo Sanguíneo (Opcional)</label>
-                        <select 
-                            id="tipoSanguineo"
-                            v-model="formulario.tipoSanguineo"
-                            class="select-input"
-                        >
-                            <option value="">Selecione...</option>
-                            <option v-for="tipo in tiposSanguineo" :key="tipo" :value="tipo">
-                                {{ tipo }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="form-group">
                     <div class="label-with-counter">
-                        <label for="texto">Seu Depoimento *</label>
+                        <label for="conteudo">Seu Depoimento *</label>
                         <span class="char-counter" :class="{ warning: caracteresRestantes() < 100 }">
                             {{ caracteresRestantes() }} caracteres restantes
                         </span>
                     </div>
                     <textarea 
-                        id="texto"
-                        v-model="formulario.texto"
+                        id="conteudo"
+                        v-model="formulario.conteudo"
                         class="textarea"
                         placeholder="Compartilhe sua experiência como doador de sangue. Como você se sentiu? Qual é o impacto que gostaria que sua doação tivesse?"
                         maxlength="2000"
                         rows="8"
-                        :class="{ error: !!erros.texto }"
+                        :class="{ error: !!erros.conteudo }"
                     />
-                    <span v-if="erros.texto" class="error-message">{{ erros.texto }}</span>
+                    <span v-if="erros.conteudo" class="error-message">{{ erros.conteudo }}</span>
                 </div>
 
                 <div class="disclaimer">
                     <p>
-                        <strong>Aviso de Privacidade:</strong> Seu depoimento será revisado antes da publicação. 
-                        Não compartilhe informações pessoais sensíveis como CPF, endereço completo ou dados médicos específicos.
+                        <strong>Aviso de Privacidade:</strong> Seu depoimento será revisado antes da publicação.
                     </p>
                 </div>
 
@@ -246,12 +214,6 @@ const caracteresRestantes = () => 2000 - formulario.value.texto.length;
     gap: 0.5rem;
 }
 
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-}
-
 label {
     font-weight: 600;
     color: var(--color-text);
@@ -272,22 +234,6 @@ label {
 .char-counter.warning {
     color: var(--color-danger);
     font-weight: 600;
-}
-
-.select-input {
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background: white;
-    color: var(--color-text);
-    font-size: 0.95rem;
-    font-family: inherit;
-}
-
-.select-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
 }
 
 .textarea {
@@ -317,12 +263,6 @@ label {
     margin-top: -0.25rem;
 }
 
-.help-text {
-    color: var(--color-text-secondary);
-    font-size: 0.75rem;
-    margin: 0;
-}
-
 .disclaimer {
     padding: 1rem;
     background: rgba(var(--color-primary-rgb), 0.05);
@@ -345,10 +285,6 @@ label {
 }
 
 @media (max-width: 768px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-
     .form-actions {
         flex-direction: column;
     }

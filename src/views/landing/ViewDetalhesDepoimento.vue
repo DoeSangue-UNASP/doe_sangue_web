@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
-import { PhArrowLeft, PhStar } from '@phosphor-icons/vue';
 import * as depoimentoService from '../../services/depoimento';
 import { ApiError } from '../../services/api';
 
@@ -17,8 +16,21 @@ async function carregarDepoimento() {
     try {
         carregando.value = true;
         erro.value = '';
-        const depoimentoId = route.params.id as string;
-        depoimento.value = await depoimentoService.buscarDepoimento(depoimentoId);
+
+        let id: string;
+        if (Array.isArray(route.params.id)) {
+            id = route.params.id[0] || '';
+        } else {
+            id = (route.params.id as string) || '';
+        }
+
+        if (!id) {
+            erro.value = 'ID do depoimento inválido';
+            return;
+        }
+
+        const result = await depoimentoService.obterDepoimento(id);
+        depoimento.value = result;
     } catch (e) {
         const error = e as ApiError;
         erro.value = error.message || 'Erro ao carregar depoimento';
@@ -53,57 +65,43 @@ onMounted(() => {
 
             <div v-else-if="erro" class="error">
                 <p>{{ erro }}</p>
+                <CustomButton 
+                    label="Voltar" 
+                    secondary 
+                    @click="voltar"
+                />
             </div>
 
-            <article v-else-if="depoimento" class="depoimento-completo">
-                <header class="depoimento-header">
-                    <div>
-                        <h1>{{ depoimento.titulo }}</h1>
-                        <div class="rating">
-                            <PhStar 
-                                v-for="i in depoimento.avaliacoes" 
-                                :key="`star-${i}`"
-                                size="20"
-                                weight="fill"
-                                color="#FFB800"
-                            />
-                        </div>
+            <article v-else-if="depoimento" class="depoimento-detail">
+                <header class="article-header">
+                    <h1>{{ depoimento.titulo }}</h1>
+                    <div class="meta">
+                        <span v-if="depoimento.autor?.nome" class="autor">
+                            Por {{ depoimento.autor.nome }}
+                        </span>
+                        <span class="data">
+                            {{ depoimentoService.formatarData(depoimento.criadoEm) }}
+                        </span>
                     </div>
                 </header>
 
-                <div class="depoimento-meta">
-                    <div v-if="depoimento.nomeAutor" class="meta-item">
-                        <label>Autor:</label>
-                        <p>{{ depoimento.nomeAutor }}</p>
-                    </div>
-                    <div v-if="depoimento.tipoSanguineo" class="meta-item">
-                        <label>Tipo Sanguíneo:</label>
-                        <p class="tipo-sangue">{{ depoimento.tipoSanguineo }}</p>
-                    </div>
-                    <div class="meta-item">
-                        <label>Data:</label>
-                        <p>{{ depoimentoService.formatarData(depoimento.dataDepoimento) }}</p>
-                    </div>
-                    <div class="meta-item">
-                        <label>Status:</label>
-                        <span class="status" :class="`status-${depoimento.status.toLowerCase()}`">
-                            {{ depoimento.status }}
-                        </span>
-                    </div>
+                <div class="content-text">
+                    <p>{{ depoimento.conteudo }}</p>
                 </div>
 
-                <div class="depoimento-corpo">
-                    <p>{{ depoimento.texto }}</p>
-                </div>
-
-                <footer class="depoimento-footer">
-                    <CustomButton 
-                        label="Voltar" 
-                        secondary 
-                        @click="voltar"
-                    />
+                <footer class="article-footer">
+                    <div class="actions">
+                        <CustomButton 
+                            label="Voltar aos Depoimentos" 
+                            @click="router.push({ name: 'depoimentos' })"
+                        />
+                    </div>
                 </footer>
             </article>
+
+            <div v-else class="empty">
+                <p>Depoimento não encontrado.</p>
+            </div>
         </main>
     </div>
 </template>
@@ -123,7 +121,7 @@ onMounted(() => {
     min-height: 400px;
 }
 
-.loading, .error {
+.loading, .error, .empty {
     padding: 3rem;
     text-align: center;
     background: var(--color-background);
@@ -136,125 +134,92 @@ onMounted(() => {
     background: rgba(220, 38, 38, 0.1);
 }
 
-.depoimento-completo {
+.depoimento-detail {
     background: white;
     border: 1px solid var(--color-border);
     border-radius: 12px;
-    padding: 2.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
-.depoimento-header {
-    margin-bottom: 2rem;
+.article-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     padding-bottom: 1.5rem;
     border-bottom: 2px solid var(--color-border);
 }
 
-.depoimento-header h1 {
+.article-header h1 {
     margin: 0;
     color: var(--color-primary);
     font-size: 2rem;
     line-height: 1.3;
 }
 
-.rating {
+.meta {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.depoimento-meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: rgba(var(--color-primary-rgb), 0.05);
-    border-radius: 8px;
-}
-
-.meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.meta-item label {
-    font-weight: 600;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.9rem;
     color: var(--color-text-secondary);
-    font-size: 0.75rem;
-    text-transform: uppercase;
 }
 
-.meta-item p {
-    margin: 0;
+.autor {
     color: var(--color-text);
-    font-size: 0.95rem;
-}
-
-.tipo-sangue {
     font-weight: 600;
-    color: var(--color-primary);
-    font-size: 1.1rem;
 }
 
-.status {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
+.data {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.status-aprovado {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-}
-
-.status-pendente {
-    background: rgba(255, 184, 0, 0.1);
-    color: #FFB800;
-}
-
-.status-rejeitado {
-    background: rgba(220, 38, 38, 0.1);
-    color: var(--color-danger);
-}
-
-.depoimento-corpo {
-    margin: 2rem 0;
-    padding: 1.5rem;
-    background: rgba(var(--color-primary-rgb), 0.02);
-    border-left: 4px solid var(--color-primary);
-    border-radius: 4px;
-}
-
-.depoimento-corpo p {
-    margin: 0;
-    color: var(--color-text);
+.content-text {
+    flex: 1;
     line-height: 1.8;
     font-size: 1rem;
+    color: var(--color-text);
 }
 
-.depoimento-footer {
-    display: flex;
-    gap: 1rem;
+.content-text p {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.article-footer {
     padding-top: 1.5rem;
     border-top: 1px solid var(--color-border);
 }
 
+.actions {
+    display: flex;
+    gap: 1rem;
+}
+
 @media (max-width: 768px) {
-    .depoimento-completo {
+    .container {
+        padding: 1rem;
+    }
+
+    .depoimento-detail {
         padding: 1.5rem;
     }
 
-    .depoimento-header h1 {
+    .article-header h1 {
         font-size: 1.5rem;
     }
 
-    .depoimento-meta {
-        grid-template-columns: 1fr;
+    .meta {
+        flex-wrap: wrap;
+    }
+
+    .actions {
+        flex-direction: column;
     }
 }
 </style>

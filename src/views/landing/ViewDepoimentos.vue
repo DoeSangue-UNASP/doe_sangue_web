@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
-import { PhPlus, PhStar } from '@phosphor-icons/vue';
 import * as depoimentoService from '../../services/depoimento';
 import { ApiError } from '../../services/api';
 
@@ -11,32 +10,19 @@ const router = useRouter();
 const depoimentos = ref<depoimentoService.Depoimento[]>([]);
 const carregando = ref(true);
 const erro = ref('');
-const pagina = ref(1);
-const totalItens = ref(0);
-const itensPorPagina = 6;
 
 async function carregarDepoimentos() {
     try {
         carregando.value = true;
         erro.value = '';
-        const result = await depoimentoService.listarDepoimentos({
-            status: 'APROVADO',
-            pagina: pagina.value,
-            limite: itensPorPagina,
-        });
+        const result = await depoimentoService.listarDepoimentos();
         depoimentos.value = result;
-        totalItens.value = result.length;
     } catch (e) {
         const error = e as ApiError;
         erro.value = error.message || 'Erro ao carregar depoimentos';
     } finally {
         carregando.value = false;
     }
-}
-
-function irParaPagina(novaPagina: number) {
-    pagina.value = novaPagina;
-    carregarDepoimentos();
 }
 
 function criarDepoimento() {
@@ -82,28 +68,19 @@ onMounted(() => {
                 <article v-for="depoimento in depoimentos" :key="depoimento.id" class="depoimento-card">
                     <div class="card-header">
                         <h3>{{ depoimento.titulo }}</h3>
-                        <div class="rating">
-                            <PhStar 
-                                v-for="i in depoimento.avaliacoes" 
-                                :key="`star-${i}`"
-                                size="16"
-                                weight="fill"
-                                color="#FFB800"
-                            />
-                        </div>
                     </div>
 
                     <p class="depoimento-texto">
-                        {{ depoimentoService.truncarTexto(depoimento.texto, 180) }}
+                        {{ depoimentoService.truncarTexto(depoimento.conteudo, 180) }}
                     </p>
 
                     <div class="card-footer">
                         <div class="meta">
-                            <span v-if="depoimento.nomeAutor" class="autor">
-                                {{ depoimento.nomeAutor }}
+                            <span v-if="depoimento.autor?.nome" class="autor">
+                                {{ depoimento.autor.nome }}
                             </span>
                             <span class="data">
-                                {{ depoimentoService.formatarData(depoimento.dataDepoimento) }}
+                                {{ depoimentoService.formatarData(depoimento.criadoEm) }}
                             </span>
                         </div>
                         <CustomButton 
@@ -113,21 +90,6 @@ onMounted(() => {
                         />
                     </div>
                 </article>
-            </div>
-
-            <div v-if="depoimentos.length > 0" class="pagination">
-                <CustomButton 
-                    label="Anterior" 
-                    secondary
-                    :disabled="pagina === 1"
-                    @click="irParaPagina(pagina - 1)"
-                />
-                <span class="page-info">Página {{ pagina }}</span>
-                <CustomButton 
-                    label="Próximo" 
-                    secondary
-                    @click="irParaPagina(pagina + 1)"
-                />
             </div>
         </main>
     </div>
