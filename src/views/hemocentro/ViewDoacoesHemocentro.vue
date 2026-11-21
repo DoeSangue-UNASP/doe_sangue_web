@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import Table from '../../components/Table.vue';
 import { PhEye, PhPlus } from '@phosphor-icons/vue';
 import CustomButton from '../../components/CustomButton.vue';
+import CustomSelect from '../../components/CustomSelect.vue';
 import Badge from '../../components/Badge.vue';
 import CustomInput from '../../components/CustomInput.vue';
 import { useAuth } from '../../composables/useAuth';
@@ -12,6 +13,13 @@ import { ApiError } from '../../services/api';
 
 const router = useRouter();
 const { token } = useAuth();
+
+const statusOptions = [
+    { value: '', label: 'Todos os status' },
+    { value: 'PENDENTE', label: 'Pendente' },
+    { value: 'REALIZADA', label: 'Realizada' },
+    { value: 'CANCELADA', label: 'Cancelada' },
+];
 
 const pageSize = 10;
 const doacoes = ref<any[]>([]);
@@ -160,15 +168,12 @@ onMounted(() => {
                     type="date"
                     label="Data Fim"
                 />
-                <div class="select-wrapper">
-                    <label>Status</label>
-                    <select v-model="filtros.status">
-                        <option value="">Todos</option>
-                        <option value="PENDENTE">Pendente</option>
-                        <option value="CONCLUIDA">Concluída</option>
-                        <option value="CANCELADA">Cancelada</option>
-                    </select>
-                </div>
+                <CustomSelect 
+                    id="status-filtro"
+                    label="Status"
+                    v-model="filtros.status"
+                    :options="statusOptions"
+                />
             </div>
             <div class="filtros-actions">
                 <CustomButton 
@@ -237,27 +242,6 @@ header h1 {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
     margin-bottom: 1rem;
-}
-
-.select-wrapper {
-    display: flex;
-    flex-direction: column;
-}
-
-.select-wrapper label {
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.select-wrapper select {
-    padding: 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background: white;
-    color: var(--color-text);
-    font-size: 0.875rem;
 }
 
 .filtros-actions {
