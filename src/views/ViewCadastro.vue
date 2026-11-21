@@ -155,6 +155,8 @@ const cadastrar = async () => {
 
 .erro {
     color: #b91c1c;
+    font-size: 0.875rem;
+    margin-top: -8px;
 }
 
 @media (max-width: 760px) {
@@ -183,8 +185,9 @@ const cadastrar = async () => {
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
+    justify-content: flex-start;
     align-items: center;
+    padding: 40px 20px;
 
     width: 50%;
 
@@ -204,16 +207,51 @@ const cadastrar = async () => {
     flex-direction: column;
     justify-content: center;
     color: var(--secondary-color);
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .fields {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
 
-    width: min(100%, 480px);
+    width: min(100%, 400px);
+    max-height: calc(100vh - 240px);
+    overflow-y: auto;
+    padding-right: 8px;
+}
 
+.fields::-webkit-scrollbar {
+    width: 6px;
+}
+
+.fields::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.fields::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.fields::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.fields h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-top: 10px;
+    margin-bottom: -10px;
+}
+
+.fields p {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-top: -8px;
+    margin-bottom: 0;
 }
 
 .form-button {
@@ -222,11 +260,11 @@ const cadastrar = async () => {
     justify-content: center;
     align-items: center;
     width: 100%;
-    gap: 30px;
-
+    gap: 20px;
+    margin-top: 10px;
 }
 
 .form-button button {
-    width: 170px;
+    width: 150px;
 }
 </style>

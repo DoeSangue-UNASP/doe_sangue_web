@@ -36,19 +36,16 @@
 
       <!-- Formulário de Agendamento -->
       <form @submit.prevent="agendar" class="formulario-agendamento" v-if="doador?.ehUsuario">
-        <div class="form-group">
-          <label for="hemocentro">Hemocentro:</label>
-          <select v-model="formData.hemocentroId" id="hemocentro" required>
-            <option value="">Selecione um hemocentro</option>
-            <option v-for="hemocen in hemocentros" :key="hemocen.id" :value="hemocen.id">
-              {{ hemocen.nomeFantasia }}
-            </option>
-          </select>
-          <small v-if="hemocentroSelecionado">
-            Funcionamento: {{ formatarHorario(hemocentroSelecionado.abreEm) }} -
-            {{ formatarHorario(hemocentroSelecionado.fechaEm) }}
-          </small>
-        </div>
+        <CustomSelect 
+          id="hemocentro"
+          label="Hemocentro"
+          v-model="formData.hemocentroId"
+          :options="hemocentrosOptions"
+        />
+        <small v-if="hemocentroSelecionado" class="horario-info">
+          Funcionamento: {{ formatarHorario(hemocentroSelecionado.abreEm) }} -
+          {{ formatarHorario(hemocentroSelecionado.fechaEm) }}
+        </small>
 
         <div class="form-row">
           <div class="form-group">
@@ -106,6 +103,7 @@ import { buscarDoadorPorId, type Doador } from '@/services/doador';
 import { criarAgendamentoHemocentro } from '@/services/agendamento';
 import { ApiError } from '@/services/api';
 import { useToast } from '@/composables/useToast';
+import CustomSelect from '@/components/CustomSelect.vue';
 
 interface Hemocentro {
   id: string;
@@ -141,6 +139,13 @@ const formData = ref({
 
 const hemocentroSelecionado = computed(() => {
   return hemocentros.value.find((h) => h.id === formData.value.hemocentroId);
+});
+
+const hemocentrosOptions = computed(() => {
+  return hemocentros.value.map((h) => ({
+    value: h.id,
+    label: h.nomeFantasia
+  }));
 });
 
 function formatarCpf(cpf: string): string {
@@ -432,6 +437,14 @@ onMounted(() => {
 .form-group small {
   display: block;
   margin-top: 0.5rem;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.horario-info {
+  display: block;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
   color: #666;
   font-size: 0.85rem;
 }
