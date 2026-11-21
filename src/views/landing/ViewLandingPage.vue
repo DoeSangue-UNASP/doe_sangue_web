@@ -5,33 +5,18 @@ import CustomButton from '../../components/CustomButton.vue';
 import NavbarLanding from '../../components/NavbarLanding.vue';
 import { useRouter } from 'vue-router';
 import { RouteNames } from '../../router/route-names';
-import { ref, onMounted } from 'vue';
-import * as depoimentoService from '../../services/depoimento';
-import { ApiError } from '../../services/api';
+import CustomDialog from '../../components/CustomDialog.vue';
+import { ref } from 'vue';
+import CustomInput from '../../components/CustomInput.vue';
+import CustomTextarea from '../../components/CustomTextarea.vue';
 
 const router = useRouter();
 
-const depoimentos = ref<depoimentoService.Depoimento[]>([]);
-const carregandoDepoimentos = ref(true);
-const erroDepoimentos = ref('');
+const open = ref<boolean>(false);
 
-async function carregarDepoimentos() {
-    try {
-        carregandoDepoimentos.value = true;
-        erroDepoimentos.value = '';
-        const result = await depoimentoService.listarDepoimentos();
-        depoimentos.value = result;
-    } catch (e) {
-        const error = e as ApiError;
-        erroDepoimentos.value = error.message || 'Erro ao carregar depoimentos';
-    } finally {
-        carregandoDepoimentos.value = false;
-    }
-}
-
-onMounted(() => {
-    carregarDepoimentos();
-});
+const toggleModal = () => {
+    open.value = !open.value;
+};
 </script>
 
 <template>
@@ -49,17 +34,18 @@ onMounted(() => {
                 </div>
             </section>
 
-            <section v-if="!carregandoDepoimentos && depoimentos.length > 0" class="depoimentos">
+            <section class="depoimentos">
                 <h1 class="poppins-regular">Depoimentos</h1>
                 <p>Confira os depoimentos inspiradores de doadores e receptores de sangue!</p>
                 <div class="cards-depoimentos">
-                    <CardDepoimento 
-                        v-for="dep in depoimentos" 
-                        :key="dep.id"
-                        :nome="dep.autor?.nome || 'Anônimo'" 
-                        :cidade="dep.autor?.nome ? 'Brasil' : ''"
-                        :depoimento="depoimentoService.truncarTexto(dep.conteudo, 180)" 
-                    />
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
+                    <CardDepoimento nome="Luis" cidade="Embu das Artes - SP"
+                        depoimento="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean aliquet sagittis sem a cursus. Praesent est mauris, commodo in libero ultrices, ullamcorper accumsan nulla. Ut tincidunt id mi et tempus. Morbi nec malesuada eros." />
                 </div>
                 <div class="card-novo-depoimento">
                     <PhHeart size="50" />
@@ -67,11 +53,30 @@ onMounted(() => {
                     <p>Compartilhe sua experiência como doador ou receptor e incentive outras pessoas a fazerem a
                         diferença. Sua história pode salvar vidas!</p>
 
-                    <CustomButton @click="router.push({ name: 'depoimentos' })" label="Compartilhe sua história!" secondary red-font-color />
+                    <CustomButton @click="toggleModal" label="Compartilhe sua história!" secondary red-font-color />
                 </div>
             </section>
         </main>
     </div>
+    <CustomDialog v-model="open">
+        <template #default>
+            <div class="dialog-header">
+                <PhHeart size="50" color="var(--primary-color)" />
+                <h1 class="dialog-title">Compartilhe sua experiência</h1>
+                <p>Sua experiência pode inspirar outras pessoas a doarem sangue e salvarem vidas!</p>
+            </div>
+            <div class="form">
+                <CustomInput label="Nome" id="nome" model-value="" placeholder="Nome" />
+                <div class="template-input-cidade-estado">
+                    <CustomInput class="input-width" label="Cidade" id="cidade" model-value=""
+                        placeholder="São Paulo" />
+                    <CustomInput class="input-width" label="Estado" id="estado" model-value="" placeholder="SP" />
+                </div>
+                <CustomTextarea label="Seu Depoimento" id="depoimento" model-value="" placeholder="depoimento..." />
+                <CustomButton label="Enviar" @click="toggleModal" />
+            </div>
+        </template>
+    </CustomDialog>
 </template>
 
 <style scoped>
