@@ -54,11 +54,11 @@
           />
         </div>
 
-        <div v-if="erro" class="alerta alerta-erro">
-          {{ erro }}
+        <div v-if="erroFormulario" class="alerta alerta-erro">
+          {{ erroFormulario }}
         </div>
 
-        <div v-if="sucesso" class="alerta alerta-sucesso">
+        <div v-if="sucessoCadastro" class="alerta alerta-sucesso">
           Lead cadastrado com sucesso!
         </div>
 
@@ -90,8 +90,10 @@ import { useRouter } from 'vue-router';
 import { obterToken } from '@/services/auth';
 import { cadastrarLead, type CadastrarLeadRequest } from '@/services/doador';
 import { ApiError } from '@/services/api';
+import { useToast } from '@/composables/useToast';
 
 const router = useRouter();
+const { sucesso, erro } = useToast();
 const token = obterToken();
 
 if (!token) {
@@ -106,8 +108,8 @@ const formulario = ref({
 });
 
 const carregando = ref(false);
-const erro = ref('');
-const sucesso = ref(false);
+const erroFormulario = ref('');
+const sucessoCadastro = ref(false);
 
 function formatarCpf(event: Event): void {
   const input = event.target as HTMLInputElement;
@@ -146,11 +148,13 @@ function formatarTelefone(event: Event): void {
 }
 
 async function submeterFormulario(): Promise<void> {
-  erro.value = '';
-  sucesso.value = false;
+  erroFormulario.value = '';
+  sucessoCadastro.value = false;
 
   if (!formulario.value.nome || !formulario.value.documento || !formulario.value.telefone || !formulario.value.dataNascimento) {
-    erro.value = 'Todos os campos são obrigatórios.';
+    const mensagem = 'Todos os campos são obrigatórios.';
+    erroFormulario.value = mensagem;
+    erro(mensagem);
     return;
   }
 
@@ -170,7 +174,9 @@ async function submeterFormulario(): Promise<void> {
 
     await cadastrarLead(leadData, token);
 
-    sucesso.value = true;
+    sucessoCadastro.value = true;
+    sucesso('Lead cadastrado com sucesso!');
+    
     formulario.value = {
       nome: '',
       documento: '',
@@ -179,25 +185,28 @@ async function submeterFormulario(): Promise<void> {
     };
 
     setTimeout(() => {
-      sucesso.value = false;
+      sucessoCadastro.value = false;
     }, 3000);
   } catch (err: unknown) {
+    let mensagem = 'Erro ao cadastrar lead. Tente novamente.';
+    
     if (err instanceof ApiError) {
       if (err.status === 401) {
-        erro.value = 'Sua sessão expirou. Faça login novamente.';
+        mensagem = 'Sua sessão expirou. Faça login novamente.';
         router.push('/login');
       } else if (err.status === 403) {
-        erro.value = 'Apenas hemocentros podem cadastrar leads.';
+        mensagem = 'Apenas hemocentros podem cadastrar leads.';
       } else if (err.status === 422) {
-        erro.value = err.message || 'Dados inválidos. Verifique e tente novamente.';
+        mensagem = err.message || 'Dados inválidos. Verifique e tente novamente.';
       } else {
-        erro.value = err.message || 'Erro ao cadastrar lead. Tente novamente.';
+        mensagem = err.message || mensagem;
       }
     } else if (err instanceof Error) {
-      erro.value = err.message;
-    } else {
-      erro.value = 'Erro desconhecido ao cadastrar lead.';
+      mensagem = err.message;
     }
+    
+    erroFormulario.value = mensagem;
+    erro(mensagem);
   } finally {
     carregando.value = false;
   }

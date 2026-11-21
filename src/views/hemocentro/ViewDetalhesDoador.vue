@@ -182,10 +182,12 @@ import {
   type Agendamento,
 } from '@/services/agendamento';
 import { ApiError } from '@/services/api';
+import { useToast } from '@/composables/useToast';
 
 const router = useRouter();
 const route = useRoute();
 const token = obterToken();
+const { sucesso, erro } = useToast();
 
 if (!token) {
   router.push('/login');
@@ -347,20 +349,25 @@ async function cancelarAgendamento(agendamentoId: string): Promise<void> {
     }
 
     await cancelarAgendamentoPorId(agendamentoId, token);
-    sucessoOperacao.value = 'Agendamento cancelado com sucesso!';
+    const mensagem = 'Agendamento cancelado com sucesso!';
+    sucessoOperacao.value = mensagem;
+    sucesso(mensagem);
 
     setTimeout(() => {
       carregarAgendamentos();
       sucessoOperacao.value = '';
     }, 1500);
   } catch (err: unknown) {
+    let mensagem = 'Erro desconhecido.';
+    
     if (err instanceof ApiError) {
-      erroOperacao.value = err.message || 'Erro ao cancelar agendamento.';
+      mensagem = err.message || 'Erro ao cancelar agendamento.';
     } else if (err instanceof Error) {
-      erroOperacao.value = err.message;
-    } else {
-      erroOperacao.value = 'Erro desconhecido.';
+      mensagem = err.message;
     }
+    
+    erroOperacao.value = mensagem;
+    erro(mensagem);
   }
 }
 

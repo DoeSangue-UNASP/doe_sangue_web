@@ -2,19 +2,20 @@
 import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
-import CustomInput from '../../components/CustomInput.vue';
 import Badge from '../../components/Badge.vue';
 import { useAuth } from '../../composables/useAuth';
+import { useToast } from '../../composables/useToast';
 import * as doacaoService from '../../services/doacao';
 import { ApiError } from '../../services/api';
 
 const router = useRouter();
 const route = useRoute();
 const { token } = useAuth();
+const { sucesso, erro } = useToast();
 
 const doacao = ref<doacaoService.Doacao | null>(null);
 const carregando = ref(true);
-const erro = ref('');
+const erroFormulario = ref('');
 const salvando = ref(false);
 const edicao = ref(false);
 const novaStatus = ref<doacaoService.StatusDoacao>('PENDENTE');
@@ -22,13 +23,15 @@ const novaStatus = ref<doacaoService.StatusDoacao>('PENDENTE');
 async function carregarDoacao() {
     try {
         carregando.value = true;
-        erro.value = '';
+        erroFormulario.value = '';
         const doacaoId = route.params.id as string;
         doacao.value = await doacaoService.buscarDoacaoPorId(doacaoId, token.value);
         novaStatus.value = doacao.value!.status;
     } catch (e) {
         const error = e as ApiError;
-        erro.value = error.message || 'Erro ao carregar doação';
+        const mensagem = error.message || 'Erro ao carregar doação';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         carregando.value = false;
     }
@@ -39,7 +42,7 @@ async function salvarAlteracoes() {
 
     try {
         salvando.value = true;
-        erro.value = '';
+        erroFormulario.value = '';
         await doacaoService.atualizarDoacao(
             doacao.value.id,
             { status: novaStatus.value },
@@ -47,9 +50,12 @@ async function salvarAlteracoes() {
         );
         doacao.value.status = novaStatus.value;
         edicao.value = false;
+        sucesso('Doação atualizada com sucesso!');
     } catch (e) {
         const error = e as ApiError;
-        erro.value = error.message || 'Erro ao salvar alterações';
+        const mensagem = error.message || 'Erro ao salvar alterações';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         salvando.value = false;
     }
@@ -62,13 +68,16 @@ async function cancelarDoacao() {
 
     try {
         salvando.value = true;
-        erro.value = '';
+        erroFormulario.value = '';
         await doacaoService.cancelarDoacao(doacao.value.id, token.value);
         doacao.value.status = 'CANCELADA';
         edicao.value = false;
+        sucesso('Doação cancelada com sucesso!');
     } catch (e) {
         const error = e as ApiError;
-        erro.value = error.message || 'Erro ao cancelar doação';
+        const mensagem = error.message || 'Erro ao cancelar doação';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         salvando.value = false;
     }
@@ -98,13 +107,13 @@ onMounted(() => {
             <p>Carregando doação...</p>
         </main>
 
-        <main v-else-if="erro && !doacao" class="error">
-            <p>{{ erro }}</p>
+        <main v-else-if="erroFormulario && !doacao" class="error">
+            <p>{{ erroFormulario }}</p>
         </main>
 
         <main v-else-if="doacao" class="content">
-            <div v-if="erro" class="error-message">
-                {{ erro }}
+            <div v-if="erroFormulario" class="error-message">
+                {{ erroFormulario }}
             </div>
 
             <section class="info-section">

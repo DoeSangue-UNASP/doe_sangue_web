@@ -8,7 +8,7 @@ export interface ToastProps {
     duration?: number;
 }
 
-defineProps<ToastProps>();
+const props = defineProps<ToastProps>();
 defineEmits<{
     close: [];
 }>();
@@ -19,8 +19,6 @@ const icon = computed(() => {
         error: PhWarningCircle,
     }[props.type];
 });
-
-const props = defineProps<ToastProps>();
 </script>
 
 <template>

@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomInput from '../../components/CustomInput.vue';
 import Badge from '../../components/Badge.vue';
 import { useAuth } from '../../composables/useAuth';
+import { useToast } from '../../composables/useToast';
 import * as agendamentoService from '../../services/agendamento';
 import * as doacaoService from '../../services/doacao';
-import * as leadService from '../../services/lead';
 import { ApiError } from '../../services/api';
 
 const router = useRouter();
 const { token } = useAuth();
+const { sucesso, erro } = useToast();
 
 const carregando = ref(false);
 const salvando = ref(false);
-const erro = ref('');
-const sucesso = ref('');
+const erroFormulario = ref('');
+const sucessoFormulario = ref('');
 const etapa = ref<'busca' | 'confirmacao' | 'bolsas'>('busca');
 
 const documento = ref('');
@@ -34,13 +35,15 @@ const novaDoacao = ref<doacaoService.Doacao | null>(null);
 
 async function buscarAgendamentos() {
     if (!documento.value) {
-        erro.value = 'Digite o CPF do doador';
+        const mensagem = 'Digite o CPF do doador';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
         return;
     }
 
     try {
         carregando.value = true;
-        erro.value = '';
+        erroFormulario.value = '';
 
         // Buscar agendamentos do doador
         const result = await agendamentoService.listarAgendamentosHemocentro(
@@ -51,14 +54,18 @@ async function buscarAgendamentos() {
         agendamentos.value = result.filter(a => a.status === 'AGENDADO');
 
         if (agendamentos.value.length === 0) {
-            erro.value = 'Nenhum agendamento encontrado para este doador.';
+            const mensagem = 'Nenhum agendamento encontrado para este doador.';
+            erroFormulario.value = mensagem;
+            erro(mensagem);
             return;
         }
 
         etapa.value = 'confirmacao';
     } catch (e) {
         const error = e as ApiError;
-        erro.value = error.message || 'Erro ao buscar agendamentos';
+        const mensagem = error.message || 'Erro ao buscar agendamentos';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         carregando.value = false;
     }
@@ -86,30 +93,38 @@ async function salvarDoacao() {
     if (!agendamentoSelecionado.value) return;
 
     if (!dataDoacao.value) {
-        erro.value = 'Selecione a data da doação';
+        const mensagem = 'Selecione a data da doação';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
         return;
     }
 
     if (!volumeDoacao.value) {
-        erro.value = 'Digite o volume doado';
+        const mensagem = 'Digite o volume doado';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
         return;
     }
 
     if (bolsas.value.length === 0) {
-        erro.value = 'Adicione pelo menos uma bolsa de sangue';
+        const mensagem = 'Adicione pelo menos uma bolsa de sangue';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
         return;
     }
 
     for (let bolsa of bolsas.value) {
         if (!bolsa.tipoSanguineo || !bolsa.volume || !bolsa.dataValidade) {
-            erro.value = 'Preencha todos os campos das bolsas de sangue';
+            const mensagem = 'Preencha todos os campos das bolsas de sangue';
+            erroFormulario.value = mensagem;
+            erro(mensagem);
             return;
         }
     }
 
     try {
         salvando.value = true;
-        erro.value = '';
+        erroFormulario.value = '';
 
         // Criar doação
         const doacaoCriada = await doacaoService.criarDoacao(
@@ -135,7 +150,9 @@ async function salvarDoacao() {
         }
 
         novaDoacao.value = doacaoCriada;
-        sucesso.value = 'Doação registrada com sucesso!';
+        const mensagem = 'Doação registrada com sucesso!';
+        sucessoFormulario.value = mensagem;
+        sucesso(mensagem);
 
         setTimeout(() => {
             router.push({
@@ -145,7 +162,9 @@ async function salvarDoacao() {
         }, 2000);
     } catch (e) {
         const error = e as ApiError;
-        erro.value = error.message || 'Erro ao registrar doação';
+        const mensagem = error.message || 'Erro ao registrar doação';
+        erroFormulario.value = mensagem;
+        erro(mensagem);
     } finally {
         salvando.value = false;
     }
@@ -183,13 +202,13 @@ onMounted(() => {
         </header>
 
         <main class="content">
-            <div v-if="sucesso" class="success">
-                <p>✓ {{ sucesso }}</p>
+            <div v-if="sucessoFormulario" class="success">
+                <p>✓ {{ sucessoFormulario }}</p>
                 <p style="font-size: 0.875rem; margin-top: 0.5rem;">Redirecionando...</p>
             </div>
 
-            <div v-if="erro" class="error">
-                <p>✗ {{ erro }}</p>
+            <div v-if="erroFormulario" class="error">
+                <p>✗ {{ erroFormulario }}</p>
             </div>
 
             <!-- ETAPA 1: BUSCAR DOADOR -->

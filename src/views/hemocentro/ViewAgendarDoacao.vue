@@ -85,14 +85,14 @@
       </div>
 
       <!-- Mensagem de Sucesso -->
-      <div v-if="sucesso" class="alerta alerta-sucesso">
+      <div v-if="sucessoFormulario" class="alerta alerta-sucesso">
         ✓ Agendamento criado com sucesso!
       </div>
 
       <!-- Mensagem de Erro -->
-      <div v-if="erro" class="alerta alerta-erro">
-        {{ erro }}
-        <button @click="erro = ''" class="botao-link">Descartar</button>
+      <div v-if="erroFormulario" class="alerta alerta-erro">
+        {{ erroFormulario }}
+        <button @click="erroFormulario = ''" class="botao-link">Descartar</button>
       </div>
     </div>
   </div>
@@ -105,6 +105,7 @@ import { obterToken } from '@/services/auth';
 import { buscarDoadorPorId, type Doador } from '@/services/doador';
 import { criarAgendamentoHemocentro } from '@/services/agendamento';
 import { ApiError } from '@/services/api';
+import { useToast } from '@/composables/useToast';
 
 interface Hemocentro {
   id: string;
@@ -116,6 +117,7 @@ interface Hemocentro {
 const router = useRouter();
 const route = useRoute();
 const token = obterToken();
+const { sucesso, erro } = useToast();
 
 if (!token) {
   router.push('/login');
@@ -128,8 +130,8 @@ const hemocentros = ref<Hemocentro[]>([]);
 const carregando = ref(false);
 const carregandoSubmit = ref(false);
 const erroCarregamento = ref('');
-const erro = ref('');
-const sucesso = ref(false);
+const erroFormulario = ref('');
+const sucessoFormulario = ref(false);
 
 const formData = ref({
   hemocentroId: '',
@@ -224,8 +226,8 @@ async function agendar(): Promise<void> {
   if (!doador || !validarFormulario()) return;
 
   carregandoSubmit.value = true;
-  erro.value = '';
-  sucesso.value = false;
+  erroFormulario.value = '';
+  sucessoFormulario.value = false;
 
   try {
     if (!token) {
@@ -243,23 +245,29 @@ async function agendar(): Promise<void> {
       token
     );
 
-    sucesso.value = true;
+    const mensagem = 'Agendamento criado com sucesso!';
+    sucessoFormulario.value = true;
+    sucesso(mensagem);
+    
     setTimeout(() => {
       router.push('/hemocentro/gerenciar-doadores');
     }, 2000);
   } catch (err: unknown) {
+    let mensagem = 'Erro ao agendar doação.';
+    
     if (err instanceof ApiError) {
       if (err.status === 401) {
-        erro.value = 'Sua sessão expirou. Faça login novamente.';
+        mensagem = 'Sua sessão expirou. Faça login novamente.';
         router.push('/login');
       } else {
-        erro.value = err.message || 'Erro ao agendar doação.';
+        mensagem = err.message || mensagem;
       }
     } else if (err instanceof Error) {
-      erro.value = err.message;
-    } else {
-      erro.value = 'Erro desconhecido ao agendar doação.';
+      mensagem = err.message;
     }
+    
+    erroFormulario.value = mensagem;
+    erro(mensagem);
   } finally {
     carregandoSubmit.value = false;
   }
