@@ -66,7 +66,7 @@ export const routesHemocentro : RouteRecordRaw[] = [
     component: ViewGerenciarBolsasSangue
   },
   {
-    path: '/hemocentro/detalhes-bolsa-sangue',
+    path: '/hemocentro/bolsas-sangue/:id',
     name: RouteNames.EDITAR_BOLSA_SANGUE_HEMOCENTRO,
     component: ViewGerenciarBolsasSangue
   },

@@ -46,6 +46,18 @@ export async function criarBolsa(dados: CriarBolsaRequest, token: string): Promi
     await apiRequest('/BolsaSangue', { method: 'POST', body: JSON.stringify(dados) }, token);
 }
 
+export async function buscarBolsa(bolsaId: string, token: string): Promise<BolsaSangue> {
+    return apiRequest(`/BolsaSangue/${bolsaId}`, { method: 'GET' }, token);
+}
+
+export async function listarMinhasBolsas(token: string): Promise<BolsaSangue[]> {
+    return apiRequest('/BolsaSangue/me', { method: 'GET' }, token);
+}
+
+export async function atualizarStatusBolsa(bolsaId: string, status: StatusBolsa, token: string): Promise<void> {
+    await apiRequest(`/BolsaSangue/${bolsaId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+}
+
 interface BolsasHemocentroResponse {
     bolsas: BolsaSangue[];
     estoque: { status: StatusBolsa; quantidade: number }[];

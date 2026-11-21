@@ -8,6 +8,7 @@ const props = defineProps<{
     options: string[];
     modelValue?: string;
     modelOpen?: boolean;
+    disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 const isOpen = ref(false);
 
 const toggleDropdown = () => {
+    if (props.disabled) return;
     isOpen.value = !isOpen.value;
 };
 
@@ -45,7 +47,7 @@ watch(isOpen, (value) => {
         <label v-if="title" class="dropdown-label poppins-regular">{{ title }}</label>
 
 
-        <div class="dropdown-header" @click="toggleDropdown">
+        <div class="dropdown-header" :class="{ disabled }" @click="toggleDropdown">
 
             <span>{{ modelValue || label }}</span>
             <span class="arrow" :class="{ 'arrow-rotate': isOpen }"><PhCaretDown/></span>
@@ -98,6 +100,16 @@ watch(isOpen, (value) => {
 
 .dropdown-header:hover {
     border-color: var(--primary-color);
+}
+
+.dropdown-header.disabled {
+    background-color: #f2f2f2;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.dropdown-header.disabled:hover {
+    border-color: var(--input-border-color);
 }
 
 .arrow {

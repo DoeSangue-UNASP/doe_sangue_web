@@ -70,9 +70,12 @@ const columns = [
     },
     {
         header: "Ações",
-        cell: () => {
-            return h(CustomButton, { icon: PhEye, label: "Visualizar", secondary: true });
-        }
+        cell: ({ row }: TableRowContext) => h(CustomButton, {
+            icon: PhEye,
+            label: "Visualizar",
+            secondary: true,
+            onClick: () => router.push({ name: RouteNames.EDITAR_BOLSA_SANGUE_HEMOCENTRO, params: { id: row.original.id } }),
+        }),
     }
 ];
 
