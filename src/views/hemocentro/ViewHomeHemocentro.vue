@@ -1,49 +1,87 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
 import { PhHandHeart } from '@phosphor-icons/vue';
 import type { ApexOptions } from 'apexcharts';
 import VueApexCharts from 'vue3-apexcharts';
+import { useRouter } from 'vue-router';
 import CustomButton from '../../components/CustomButton.vue';
 import CustomInput from '../../components/CustomInput.vue';
-import { router } from '../../router';
 import { RouteNames } from '../../router/route-names';
+import { obterToken } from '../../services/auth';
+import * as agendamentoService from '../../services/agendamento';
+import { buscarMeuHemocentro } from '../../services/hemocentro';
+import { listarBolsasHemocentro, tipoSanguineoCompleto, TIPOS_SANGUINEOS, type BolsaSangue } from '../../services/bolsa';
+import { useToast } from '../../composables/useToast';
 
-const doadores = [
-    {
-        nome: "fulano",
-        data: "01/11/2025 10:45",
-        tipo_sangue: "O+"
-    },
-    {
-        nome: "fulano",
-        data: "01/11/2025 10:45",
-        tipo_sangue: "O+"
-    }
-];
+const router = useRouter();
+const { erro } = useToast();
 
-const estoqueSangue = [
-    { tipo: 'A+', quantidade: 32 },
-    { tipo: 'A-', quantidade: 12 },
-    { tipo: 'B+', quantidade: 24 },
-    { tipo: 'B-', quantidade: 8 },
-    { tipo: 'AB+', quantidade: 15 },
-    { tipo: 'AB-', quantidade: 5 },
-    { tipo: 'O+', quantidade: 40 },
-    { tipo: 'O-', quantidade: 10 }
-];
+const carregando = ref(true);
+const nomeHemocentro = ref('');
+const doacoes = ref<agendamentoService.Agendamento[]>([]);
+const bolsas = ref<BolsaSangue[]>([]);
+const pesquisa = ref('');
 
-const totalEstoque = estoqueSangue.reduce((acumulado, item) => acumulado + item.quantidade, 0);
+const saudacao = computed(() => nomeHemocentro.value ? `Olá, ${nomeHemocentro.value}!` : 'Olá!');
 
-const estoquePercentual = estoqueSangue.map((item) => ({
-    tipo: item.tipo,
-    percentual: totalEstoque === 0 ? 0 : Number(((item.quantidade / totalEstoque) * 100).toFixed(2))
-}));
+const tipoPorAgendamento = computed(() => {
+    const mapa = new Map<string, string>();
+    bolsas.value.forEach((bolsa) => mapa.set(bolsa.agendamentoId, tipoSanguineoCompleto(bolsa)));
+    return mapa;
+});
 
-const estoqueSeries = [
+const ultimasDoacoes = computed(() => {
+    const termo = pesquisa.value.trim().toLowerCase();
+    return doacoes.value
+        .filter((doacao) => !termo || doacao.doador.nome.toLowerCase().includes(termo))
+        .slice(0, 5)
+        .map((doacao) => ({
+            id: doacao.id,
+            nome: doacao.doador.nome,
+            data: agendamentoService.formatarDataBrasileira(doacao.agendadoPara),
+            tipoSanguineo: tipoPorAgendamento.value.get(doacao.id) ?? '-',
+        }));
+});
+
+// Apenas bolsas disponíveis compõem o estoque
+const estoqueSangue = computed(() => {
+    const disponiveis = bolsas.value.filter((bolsa) => bolsa.status === 'DISPONIVEL');
+    return TIPOS_SANGUINEOS.map((tipo) => ({
+        tipo,
+        quantidade: disponiveis.filter((bolsa) => tipoSanguineoCompleto(bolsa) === tipo).length,
+    }));
+});
+
+const totalEstoque = computed(() => estoqueSangue.value.reduce((acumulado, item) => acumulado + item.quantidade, 0));
+
+const estoqueSeries = computed(() => [
     {
         name: 'Percentual do estoque',
-        data: estoquePercentual.map((item) => item.percentual)
+        data: estoqueSangue.value.map((item) =>
+            totalEstoque.value === 0 ? 0 : Number(((item.quantidade / totalEstoque.value) * 100).toFixed(2)))
     }
-];
+]);
+
+async function carregarDados() {
+    const token = obterToken() ?? '';
+    const [hemocentro, agendamentos, listaBolsas] = await Promise.allSettled([
+        buscarMeuHemocentro(token),
+        agendamentoService.listarAgendamentosHemocentro({}, token),
+        listarBolsasHemocentro(token),
+    ]);
+
+    if (hemocentro.status === 'fulfilled') nomeHemocentro.value = hemocentro.value.nomeFantasia;
+    if (agendamentos.status === 'fulfilled') doacoes.value = agendamentoService.filtrarDoacoes(agendamentos.value);
+    if (listaBolsas.status === 'fulfilled') bolsas.value = listaBolsas.value;
+
+    const falha = [hemocentro, agendamentos, listaBolsas].find((resultado) => resultado.status === 'rejected');
+    if (falha && falha.status === 'rejected') {
+        erro((falha.reason as { message?: string })?.message || 'Não foi possível carregar o dashboard.');
+    }
+    carregando.value = false;
+}
+
+onMounted(carregarDados);
 
 const estoqueChartOptions: ApexOptions = {
     chart: {
@@ -66,7 +104,7 @@ const estoqueChartOptions: ApexOptions = {
         fontSize: '14px'
     },
     xaxis: {
-        categories: estoquePercentual.map((item) => item.tipo),
+        categories: TIPOS_SANGUINEOS,
         labels: {
             style: {
                 fontSize: '14px'
@@ -107,37 +145,44 @@ const estoqueChartOptions: ApexOptions = {
 <template>
     <div class="view-container">
         <header>
-            <h1>Olá, Hemocentro!</h1>
-            <CustomButton label="Nova Doação" @click="router.push(RouteNames.CRIAR_BOLSA_SANGUE_HEMOCENTRO)" />
+            <h1>{{ saudacao }}</h1>
+            <CustomButton label="Nova Doação" @click="router.push({ name: RouteNames.CRIAR_BOLSA_SANGUE_HEMOCENTRO })" />
         </header>
         <main>
             <section class="secao-ultimas-doacoes">
                 <div class="header-ultimas-doacoes">
                     <h2>Últimas Doações</h2>
-                    <CustomInput label="Pesquisar" id="pesquisar" model-value="" placeholder="pesquisar" />
+                    <CustomInput label="Pesquisar" id="pesquisar" v-model="pesquisa" placeholder="pesquisar" />
                 </div>
                 <div class="listagem-ultimas-doacoes">
-                    <div class="ultimas-doacoes" v-for="doador in doadores">
-                        <div class="icon">
-                            <PhHandHeart size="25" color="var(--primary-color)" />
+                    <p v-if="carregando" class="empty">Carregando...</p>
+                    <p v-else-if="doacoes.length === 0" class="empty">Nenhuma doação realizada</p>
+                    <p v-else-if="ultimasDoacoes.length === 0" class="empty">Nenhuma doação encontrada</p>
+                    <template v-else>
+                        <div class="ultimas-doacoes" v-for="doacao in ultimasDoacoes" :key="doacao.id">
+                            <div class="icon">
+                                <PhHandHeart size="25" color="var(--primary-color)" />
+                            </div>
+                            <div class="nome-data">
+                                <p>{{ doacao.nome }}</p>
+                                <p>{{ doacao.data }}</p>
+                            </div>
+                            <div class="tipo-sangue">
+                                <p>{{ doacao.tipoSanguineo }}</p>
+                            </div>
                         </div>
-                        <div class="nome-data">
-                            <p>{{ doador.nome }}</p>
-                            <p>{{ doador.data }}</p>
-                        </div>
-                        <div class="tipo-sangue">
-                            <p>{{ doador.tipo_sangue }}</p>
-                        </div>
-                    </div>
+                    </template>
                 </div>
             </section>
 
             <section class="grafico">
                 <h2>Banco de Sangue</h2>
-                <div class="grafico-container">
+                <p v-if="carregando" class="empty">Carregando...</p>
+                <div v-else-if="totalEstoque > 0" class="grafico-container">
                     <VueApexCharts type="bar" height="100%" width="100%" :options="estoqueChartOptions"
                         :series="estoqueSeries" />
                 </div>
+                <p v-else class="empty">Nenhuma bolsa de sangue disponível</p>
             </section>
         </main>
     </div>
@@ -235,5 +280,14 @@ main {
 .grafico-container {
     flex: 1;
     min-height: 0;
+}
+
+.empty {
+    margin: 0;
+    padding: 2rem;
+    text-align: center;
+    background: var(--color-background);
+    border-radius: 8px;
+    color: var(--color-text-secondary);
 }
 </style>

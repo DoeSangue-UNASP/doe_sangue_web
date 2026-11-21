@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -9,11 +9,22 @@ import type { EventInput } from '@fullcalendar/core/index.js'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import IconButton from '../../components/IconButton.vue'
 import CustomInput from '../../components/CustomInput.vue'
-import { PhFunnel, PhMagnifyingGlass, PhPlus, PhX } from '@phosphor-icons/vue'
+import { PhFunnel, PhPlus, PhX } from '@phosphor-icons/vue'
 import CustomDialog from '../../components/CustomDialog.vue'
 import CustomButton from '../../components/CustomButton.vue'
 import CustomDatePicker from '../../components/CustomDatePicker.vue'
 import CustomDropdown from '../../components/CustomDropdown.vue'
+import CustomSearchSelect from '../../components/CustomSearchSelect.vue'
+import { useRouter } from 'vue-router'
+import { RouteNames } from '../../router/route-names'
+import { useToast } from '../../composables/useToast'
+import { obterToken } from '../../services/auth'
+import * as agendamentoService from '../../services/agendamento'
+import { buscarDoadores, formatarCpf, type Doador } from '../../services/doador'
+import { buscarMeuHemocentro, gerarHorarios, type Hemocentro } from '../../services/hemocentro'
+
+const router = useRouter()
+const { sucesso, erro } = useToast()
 
 const openCriarAgendamento = ref<boolean>(false);
 const openCancelarAgendamento = ref<boolean>(false);
@@ -22,22 +33,70 @@ const filter = ref('')
 const selectedTime = ref('')
 const isDatePickerOpen = ref(false)
 const isTimeDropdownOpen = ref(false)
+const doadorSelecionadoId = ref('')
+const dataSelecionada = ref('')
+const doadores = ref<Doador[]>([])
+const meuHemocentro = ref<Hemocentro | null>(null)
+const salvando = ref(false)
 
-const timeOptions = [
-  '08:00',
-  '09:00',
-  '10:00',
-  '11:00',
-  '12:00',
-  '13:00',
-  '14:00',
-  '15:00',
-  '16:00'
-]
+const dataDeHoje = () => agendamentoService.formatarDataParaInput(new Date()).split('T')[0] as string
+
+const doadorOptions = computed(() =>
+  doadores.value.map((doador) => ({
+    value: doador.id,
+    label: doador.nome,
+    description: `${formatarCpf(doador.documento)} · ${doador.ehLead ? 'Lead' : 'Usuário'}`,
+  }))
+)
+
+const timeOptions = computed(() =>
+  meuHemocentro.value ? gerarHorarios(meuHemocentro.value.abreEm, meuHemocentro.value.fechaEm) : []
+)
 
 const toggleModalCriarAgendamento = () => {
+  if (!openCriarAgendamento.value) {
+    doadorSelecionadoId.value = ''
+    selectedTime.value = ''
+    dataSelecionada.value = dataDeHoje()
+  }
   openCriarAgendamento.value = !openCriarAgendamento.value;
 };
+
+const salvarAgendamento = async () => {
+  if (!doadorSelecionadoId.value) {
+    erro('Selecione um doador.')
+    return
+  }
+  if (!selectedTime.value) {
+    erro('Selecione um horário.')
+    return
+  }
+  if (!meuHemocentro.value) {
+    erro('Não foi possível identificar o hemocentro.')
+    return
+  }
+
+  const agendadoPara = `${dataSelecionada.value}T${selectedTime.value}:00`
+  if (!agendamentoService.validarDataFutura(agendadoPara)) {
+    erro('Selecione uma data e um horário futuros.')
+    return
+  }
+
+  salvando.value = true
+  try {
+    await agendamentoService.criarAgendamentoHemocentro(
+      { doadorId: doadorSelecionadoId.value, hemocentroId: meuHemocentro.value.id, agendadoPara },
+      obterToken() ?? ''
+    )
+    sucesso('Agendamento criado com sucesso!')
+    openCriarAgendamento.value = false
+    await carregarAgendamentos()
+  } catch (e) {
+    erro((e as { message?: string }).message || 'Não foi possível criar o agendamento.')
+  } finally {
+    salvando.value = false
+  }
+}
 
 const toggleModalCancelarAgendamento = () => {
   openCancelarAgendamento.value = !openCancelarAgendamento.value;
@@ -63,111 +122,50 @@ const handleTimeDropdownOpenChange = (value: boolean) => {
   }
 }
 
-const events = ref<EventInput[]>([
-  // Segunda-feira 08/06
-  {
-    id: '1',
-    title: 'Ana Silva',
-    start: '2026-06-08T08:00:00',
-    end: '2026-06-08T08:40:00',
-    extendedProps: { cpf: '111.222.333-44' }
-  },
-  {
-    id: '2',
-    title: 'Carlos Souza',
-    start: '2026-06-08T10:00:00',
-    end: '2026-06-08T10:40:00',
-    extendedProps: { cpf: '222.333.444-55' }
-  },
-  {
-    id: '3',
-    title: 'Mariana Lima',
-    start: '2026-06-08T14:00:00',
-    end: '2026-06-08T14:40:00',
-    extendedProps: { cpf: '333.444.555-66' }
-  },
-  // Terça-feira 09/06
-  {
-    id: '4',
-    title: 'Pedro Alves',
-    start: '2026-06-09T09:00:00',
-    end: '2026-06-09T09:40:00',
-    extendedProps: { cpf: '444.555.666-77' }
-  },
-  {
-    id: '5',
-    title: 'Fernanda Costa',
-    start: '2026-06-09T11:00:00',
-    end: '2026-06-09T11:40:00',
-    extendedProps: { cpf: '555.666.777-88' }
-  },
-  {
-    id: '6',
-    title: 'Rafael Mendes',
-    start: '2026-06-09T15:00:00',
-    end: '2026-06-09T15:40:00',
-    extendedProps: { cpf: '666.777.888-99' }
-  },
-  // Quarta-feira 10/06
-  {
-    id: '7',
-    title: 'Juliana Rocha',
-    start: '2026-06-10T08:00:00',
-    end: '2026-06-10T08:40:00',
-    extendedProps: { cpf: '777.888.999-00' }
-  },
-  {
-    id: '8',
-    title: 'Bruno Ferreira',
-    start: '2026-06-10T13:00:00',
-    end: '2026-06-10T13:40:00',
-    extendedProps: { cpf: '888.999.000-11' }
-  },
-  // Quinta-feira 11/06
-  {
-    id: '9',
-    title: 'Camila Nunes',
-    start: '2026-06-11T10:00:00',
-    end: '2026-06-11T10:40:00',
-    extendedProps: { cpf: '999.000.111-22' }
-  },
-  {
-    id: '10',
-    title: 'Diego Martins',
-    start: '2026-06-11T12:00:00',
-    end: '2026-06-11T12:40:00',
-    extendedProps: { cpf: '000.111.222-33' }
-  },
-  {
-    id: '11',
-    title: 'Letícia Barros',
-    start: '2026-06-11T16:00:00',
-    end: '2026-06-11T16:40:00',
-    extendedProps: { cpf: '112.233.344-55' }
-  },
-  // Sexta-feira 12/06
-  {
-    id: '12',
-    title: 'Thiago Oliveira',
-    start: '2026-06-12T09:00:00',
-    end: '2026-06-12T09:40:00',
-    extendedProps: { cpf: '223.344.455-66' }
-  },
-  {
-    id: '13',
-    title: 'Patrícia Gomes',
-    start: '2026-06-12T11:00:00',
-    end: '2026-06-12T11:40:00',
-    extendedProps: { cpf: '334.455.566-77' }
-  },
-  {
-    id: '14',
-    title: 'Lucas Ribeiro',
-    start: '2026-06-12T14:00:00',
-    end: '2026-06-12T14:40:00',
-    extendedProps: { cpf: '445.566.677-88' }
+const events = ref<EventInput[]>([])
+const carregando = ref(true)
+const erroCarregamento = ref('')
+const horarioFuncionamento = ref<{ abreEm: string; fechaEm: string } | null>(null)
+
+const DURACAO_AGENDAMENTO_MS = 40 * 60 * 1000
+
+// Apenas agendamentos ativos aparecem na agenda
+const carregarAgendamentos = async () => {
+  const token = obterToken() ?? ''
+  try {
+    const [agendamentos, hemocentro, listaDoadores] = await Promise.all([
+      agendamentoService.listarAgendamentosHemocentro({}, token),
+      buscarMeuHemocentro(token).catch(() => null),
+      buscarDoadores(token).catch(() => [] as Doador[]),
+    ])
+
+    doadores.value = listaDoadores
+    meuHemocentro.value = hemocentro
+
+    events.value = agendamentos
+      .filter((agendamento) => agendamento.status === 'AGENDADO')
+      .map((agendamento) => {
+        const inicio = new Date(agendamento.agendadoPara)
+        return {
+          id: agendamento.id,
+          title: agendamento.doador.nome,
+          start: inicio,
+          end: new Date(inicio.getTime() + DURACAO_AGENDAMENTO_MS),
+          extendedProps: { cpf: agendamento.doador.documento }
+        }
+      })
+
+    if (hemocentro) {
+      horarioFuncionamento.value = { abreEm: hemocentro.abreEm, fechaEm: hemocentro.fechaEm }
+    }
+  } catch (e) {
+    erroCarregamento.value = (e as { message?: string }).message || 'Erro ao carregar agendamentos'
+  } finally {
+    carregando.value = false
   }
-])
+}
+
+onMounted(carregarAgendamentos)
 
 const filteredEvents = computed(() => {
   const currentFilter = filter.value.trim().toLowerCase()
@@ -185,6 +183,22 @@ const filteredEvents = computed(() => {
       || cpf.includes(currentFilter)
     )
   })
+})
+
+const temEventoEmFimDeSemana = computed(() =>
+  events.value.some((evento) => {
+    const dia = new Date(evento.start as Date).getDay()
+    return dia === 0 || dia === 6
+  })
+)
+
+// A agenda usa o horário de funcionamento do hemocentro, com um padrão caso não seja possível carregá-lo
+const limitesAgenda = computed(() => {
+  const horario = horarioFuncionamento.value
+  if (!horario || horario.fechaEm <= horario.abreEm) {
+    return { min: '08:00:00', max: '17:00:00' }
+  }
+  return { min: horario.abreEm, max: horario.fechaEm }
 })
 
 const calendarOptions = computed(() => ({
@@ -209,9 +223,9 @@ const calendarOptions = computed(() => ({
     list: 'Lista'
   },
   allDaySlot: false,
-  weekends: false,
-  slotMinTime: '08:00:00',
-  slotMaxTime: '17:00:00',
+  weekends: temEventoEmFimDeSemana.value,
+  slotMinTime: limitesAgenda.value.min,
+  slotMaxTime: limitesAgenda.value.max,
   slotDuration: '01:00:00',
   eventMinHeight: 52,
   nowIndicator: true,
@@ -240,7 +254,10 @@ const calendarOptions = computed(() => ({
     </header>
 
     <main class="calendar-container">
-      <FullCalendar :options="calendarOptions">
+      <p v-if="carregando" class="empty">Carregando agendamentos...</p>
+      <p v-else-if="erroCarregamento" class="empty erro">{{ erroCarregamento }}</p>
+      <p v-else-if="events.length === 0" class="empty">Nenhum agendamento</p>
+      <FullCalendar v-else :options="calendarOptions">
         <template #eventContent="arg">
           <div class="event-content">
             <button type="button" class="event-cancel-btn" aria-label="Cancelar agendamento"
@@ -261,10 +278,11 @@ const calendarOptions = computed(() => ({
     </template>
     <template #default>
       <div class="modal-content-search-row">
-        <CustomInput class="modal-content-input" label="Pesquisar Doador" id="pesquisar-doador"
-          placeholder="Pesquisar doador ou CPF" />
-        <IconButton :icon="PhMagnifyingGlass" />
-        <CustomButton class="modal-content-btn" secondary red-font-color label="Cadastrar doador" />
+        <CustomSearchSelect class="modal-content-input" id="pesquisar-doador" label="Doador"
+          placeholder="Pesquisar por nome ou CPF" v-model="doadorSelecionadoId" :options="doadorOptions"
+          empty-text="Nenhum doador encontrado" />
+        <CustomButton class="modal-content-btn" secondary red-font-color label="Cadastrar doador"
+          @click="router.push({ name: RouteNames.DOADORES_HEMOCENTRO_NOVO })" />
       </div>
 
       <div class="modal-content-schedule">
@@ -272,7 +290,8 @@ const calendarOptions = computed(() => ({
 
         <div class="modal-content-schedule-fields">
           <CustomDatePicker class="modal-content-datepicker" title="Dia" id="data-agendamento"
-            v-model:model-open="isDatePickerOpen" @update:model-open="handleDatePickerOpenChange" />
+            v-model="dataSelecionada" v-model:model-open="isDatePickerOpen"
+            @update:model-open="handleDatePickerOpenChange" />
 
           <CustomDropdown class="modal-content-time-select" title="Horário" label="Selecione" :options="timeOptions"
             v-model="selectedTime" v-model:model-open="isTimeDropdownOpen"
@@ -282,7 +301,8 @@ const calendarOptions = computed(() => ({
     </template>
     <template #footer>
       <div class="modal-footer">
-        <CustomButton class="modal-content-btn" label="Salvar" />
+        <CustomButton class="modal-content-btn" :label="salvando ? 'Salvando...' : 'Salvar'" :disabled="salvando"
+          @click="salvarAgendamento" />
       </div>
     </template>
   </CustomDialog>
@@ -525,13 +545,26 @@ const calendarOptions = computed(() => ({
   transition: opacity 0.25s ease;
 }
 
+.empty {
+  margin: 0;
+  padding: 2rem;
+  text-align: center;
+  background: var(--color-background);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+}
+
+.empty.erro {
+  color: var(--color-danger);
+}
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 
 .modal-content-input {
-  width: 350px;
+  width: 480px;
 }
 
 .modal-content-search-row {

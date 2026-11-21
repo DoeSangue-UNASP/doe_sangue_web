@@ -10,6 +10,7 @@ const props = defineProps<{
     modelOpen?: boolean;
     modelValue?: string;
     yearRange?: { min: number; max: number };
+    disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -18,8 +19,11 @@ const emit = defineEmits<{
 }>();
 
 const today = new Date();
+// Com v-model vazio o campo começa sem data; sem v-model, começa com a data de hoje
 const selectedDate = ref<string>(
-    `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`
+    props.modelValue === ''
+        ? ''
+        : `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`
 );
 const isCalendarOpen = ref<boolean>(false);
 const currentMonthIndex = ref<number>(today.getMonth());
@@ -27,6 +31,10 @@ const currentYear = ref<number>(today.getFullYear());
 
 // modelValue usa o formato ISO (yyyy-MM-dd)
 watch(() => props.modelValue, (value) => {
+    if (value === '') {
+        selectedDate.value = '';
+        return;
+    }
     if (!value) return;
     const [year, month, day] = value.split('-').map(Number);
     if (!year || !month || !day) return;
@@ -70,6 +78,7 @@ const navigateMonth = (direction: 'prev' | 'next'): void => {
 };
 
 const toggleCalendar = (): void => {
+    if (props.disabled) return;
     isCalendarOpen.value = !isCalendarOpen.value;
 };
 
@@ -180,7 +189,7 @@ watch(isCalendarOpen, (value) => {
 <template>
     <div class="date-picker-wrapper poppins-medium">
         <label id="date-picker-label" class="poppins-regular">{{ title }}</label>
-        <div class="date-input-container" @click="toggleCalendar">
+        <div class="date-input-container" :class="{ disabled }" @click="toggleCalendar">
             <input type="text" :value="selectedDate" class="date-input" placeholder="Selecione uma data" readonly />
             <span class="calendar-icon">
                 <PhCalendarDots :size="32" />
@@ -245,6 +254,16 @@ watch(isCalendarOpen, (value) => {
     background-color: var(--font-button-primary);
     height: var(--input-height);
     margin: 8px 0;
+}
+
+.date-input-container.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.date-input-container.disabled .date-input {
+    background-color: #f2f2f2;
+    cursor: not-allowed;
 }
 
 .date-input {

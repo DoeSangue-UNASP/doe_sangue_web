@@ -44,7 +44,7 @@ function toggleInput() {
 
 function handleAddClick() {
     if (props.addRoute) {
-        router.push(props.addRoute)
+        router.push(props.addRoute.startsWith('/') ? props.addRoute : { name: props.addRoute })
         return
     }
 

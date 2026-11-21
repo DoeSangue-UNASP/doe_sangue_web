@@ -3,33 +3,44 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import CustomDialog from '../../components/CustomDialog.vue';
+import CustomDatePicker from '../../components/CustomDatePicker.vue';
 import CustomInput from '../../components/CustomInput.vue';
+import CustomSelect from '../../components/CustomSelect.vue';
 import CustomButton from '../../components/CustomButton.vue';
-import { useViaCep } from '../../composables/useViaCep';
 import { useToast } from '../../composables/useToast';
+import { obterToken } from '../../services/auth';
+import {
+    atualizarDoadorPeloHemocentro,
+    buscarDoadorPorId,
+    cadastrarLead,
+    SEXO_OPTIONS,
+    TIPO_SANGUINEO_OPTIONS,
+    type Doador,
+} from '../../services/doador';
 
 const route = useRoute();
 
 const router = useRouter();
 
-const { buscarEnderecoPorCep, carregandoCep, erroCep } = useViaCep();
 const { sucesso, erro } = useToast();
 
 const form = ref({
     nomeCompleto: '',
-    genero: '',
-    nomeSocial: '',
     cpf: '',
     nascimento: '',
-    email: '',
     telefone: '',
-    rua: '',
-    numero: '',
-    cep: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
+    sexo: '',
+    tipoSanguineo: '',
 });
+
+const doador = ref<Doador | null>(null);
+const carregando = ref(false);
+const salvando = ref(false);
+
+const anoAtual = new Date().getFullYear();
+const anosNascimento = { min: anoAtual - 120, max: anoAtual };
+
+const mensagemErro = (e: unknown, padrao: string) => (e as { message?: string }).message || padrao;
 
 const open = ref(false);
 const toggleModal = () => (open.value = !open.value);
@@ -43,54 +54,79 @@ const isViewMode = computed(() => {
 
 const isEditing = ref(false);
 
-const preencherEnderecoViaCep = async () => {
-    if (!form.value.cep.trim()) {
-        erro('Digite um CEP');
-        return;
-    }
-
-    const endereco = await buscarEnderecoPorCep(form.value.cep);
-    
-    if (endereco) {
-        form.value.rua = endereco.rua;
-        form.value.bairro = endereco.bairro;
-        form.value.cidade = endereco.cidade;
-        form.value.estado = endereco.estado;
-        sucesso('Endereço preenchido com sucesso!');
-    } else if (erroCep.value) {
-        erro(erroCep.value);
-    }
-};
-
 const inputDisabled = computed(() => {
     if (isViewMode.value && !isEditing.value) return true;
     return false;
 });
 
+// Para doadores usuários, o hemocentro só pode alterar sexo e tipo sanguíneo
+const dadosPessoaisDisabled = computed(() => inputDisabled.value || !!doador.value?.ehUsuario);
+
 const toggleEditing = () => {
     isEditing.value = !isEditing.value;
+    if (!isEditing.value && doador.value) preencherFormulario(doador.value);
 };
 
-onMounted(() => {
-    if (isViewMode.value) {
-        const data = {
-            nomeCompleto: 'Maria Souza',
-            genero: 'Feminino',
-            nomeSocial: '',
-            cpf: '123.456.789-00',
-            nascimento: '1990-01-01',
-            email: 'maria@email.com',
-            telefone: '48999999999',
-            rua: 'Rua das Flores',
-            numero: '123',
-            cep: '88000-000',
-            bairro: 'Centro',
-            cidade: 'Florianópolis',
-            estado: 'SC',
-        };
+function preencherFormulario(dados: Doador) {
+    form.value = {
+        nomeCompleto: dados.nome,
+        cpf: dados.documento,
+        nascimento: dados.dataNascimento,
+        telefone: dados.telefone,
+        sexo: dados.sexo ?? '',
+        tipoSanguineo: dados.tipoSanguineo ?? '',
+    };
+}
 
-        form.value = data;
+async function carregarDoador() {
+    carregando.value = true;
+    try {
+        const dados = await buscarDoadorPorId(route.params.id as string, obterToken() ?? '');
+        doador.value = dados;
+        preencherFormulario(dados);
+    } catch (e) {
+        erro(mensagemErro(e, 'Não foi possível carregar o doador.'));
+    } finally {
+        carregando.value = false;
     }
+}
+
+async function salvar() {
+    const dados = form.value;
+    if (!dados.nomeCompleto.trim() || !dados.cpf.trim() || !dados.telefone.trim() || !dados.nascimento) {
+        erro('Preencha nome, CPF, telefone e data de nascimento.');
+        return;
+    }
+
+    const requisicao = {
+        nome: dados.nomeCompleto.trim(),
+        documento: dados.cpf.replace(/\D/g, ''),
+        telefone: dados.telefone.replace(/\D/g, ''),
+        dataNascimento: dados.nascimento,
+        sexo: dados.sexo,
+        tipoSanguineo: dados.tipoSanguineo,
+    };
+
+    salvando.value = true;
+    try {
+        const token = obterToken() ?? '';
+        if (isViewMode.value) {
+            await atualizarDoadorPeloHemocentro(route.params.id as string, requisicao, token);
+            sucesso('Doador atualizado com sucesso!');
+        } else {
+            await cadastrarLead(requisicao, token);
+            sucesso('Doador cadastrado com sucesso!');
+        }
+        toggleModal();
+    } catch (e) {
+        erro(mensagemErro(e, 'Não foi possível salvar o doador.'));
+    } finally {
+        salvando.value = false;
+    }
+}
+
+onMounted(() => {
+    if (isViewMode.value) carregarDoador();
 });
 </script>
 
@@ -109,75 +145,39 @@ onMounted(() => {
     <div class="dados-pessoais">
         <div class="template-dois-inputs">
             <CustomInput id="nome" class="input1" label="Nome Completo" v-model="form.nomeCompleto"
-                :disabled="inputDisabled" />
-            <CustomInput id="genero" class="input2" label="Gênero" v-model="form.genero" :disabled="inputDisabled" />
+                :disabled="dadosPessoaisDisabled" />
+            <CustomInput id="cpf" class="input2" label="CPF" v-model="form.cpf" :disabled="dadosPessoaisDisabled" />
         </div>
 
-        <div class="template-dois-inputs">
-            <CustomInput id="nome-social" class="input1" label="Nome Social (opcional)" v-model="form.nomeSocial"
-                :disabled="inputDisabled" />
-            <CustomInput id="cpf" class="input2" label="CPF" v-model="form.cpf" :disabled="inputDisabled" />
+        <div class="template-linha">
+            <CustomDatePicker title="Data de Nascimento" id="data-nascimento" v-model="form.nascimento"
+                :year-range="anosNascimento" :disabled="dadosPessoaisDisabled" />
+            <CustomInput id="telefone" class="input-telefone" label="Telefone" v-model="form.telefone"
+                :disabled="dadosPessoaisDisabled" />
         </div>
 
-        <div class="template-dois-inputs">
-            <CustomInput id="data-nascimento" label="Data de Nascimento" v-model="form.nascimento"
-                :disabled="inputDisabled" type="date" />
-        </div>
-
-        <h2>Contato e endereço</h2>
-
-        <div class="template-dois-inputs">
-            <CustomInput id="email" class="input1" label="Email" v-model="form.email" :disabled="inputDisabled"
-                type="email" />
-            <CustomInput id="telefone" class="input2" label="Telefone" v-model="form.telefone"
-                :disabled="inputDisabled" />
-        </div>
-
-        <div class="template-dois-inputs">
-            <CustomInput id="rua" class="input1" label="Rua" v-model="form.rua" :disabled="inputDisabled" />
-            <CustomInput id="numero" class="input2" label="Número" v-model="form.numero" :disabled="inputDisabled" />
-        </div>
-
-        <div class="template-endereco">
-            <div class="cep-input-wrapper-gerenciar">
-                <CustomInput 
-                    id="cep" 
-                    class="cep" 
-                    label="CEP" 
-                    v-model="form.cep" 
-                    :disabled="inputDisabled || carregandoCep"
-                />
-                <button 
-                    type="button"
-                    @click="preencherEnderecoViaCep"
-                    :disabled="carregandoCep || inputDisabled"
-                    class="btn-buscar-cep-gerenciar"
-                    v-if="!inputDisabled"
-                >
-                    {{ carregandoCep ? 'Buscando...' : 'Buscar' }}
-                </button>
-            </div>
-            <p v-if="erroCep" class="erro-cep-gerenciar">{{ erroCep }}</p>
-            <CustomInput id="bairro" class="bairro" label="Bairro" v-model="form.bairro" :disabled="inputDisabled" />
-            <CustomInput id="cidade" class="cidade" label="Cidade" v-model="form.cidade" :disabled="inputDisabled" />
-            <CustomInput id="estado" class="estado" label="Estado" v-model="form.estado" :disabled="inputDisabled" />
+        <div class="template-linha">
+            <CustomSelect class="select-clinico" id="sexo" label="Sexo (opcional)" v-model="form.sexo"
+                :options="SEXO_OPTIONS" :disabled="inputDisabled" />
+            <CustomSelect class="select-clinico" id="tipo-sanguineo" label="Tipo sanguíneo (opcional)"
+                v-model="form.tipoSanguineo" :options="TIPO_SANGUINEO_OPTIONS" :disabled="inputDisabled" />
         </div>
 
         <div class="actions" v-if="!isViewMode && !isEditing">
-            <CustomButton label="Salvar" @click="toggleModal" />
+            <CustomButton :label="salvando ? 'Salvando...' : 'Salvar'" :disabled="salvando" @click="salvar" />
         </div>
         <div class="actions" v-if="isViewMode && isEditing">
             <CustomButton label="Cancelar" secondary @click="toggleEditing" />
-            <CustomButton label="Salvar" @click="toggleModal" />
+            <CustomButton :label="salvando ? 'Salvando...' : 'Salvar'" :disabled="salvando" @click="salvar" />
         </div>
         <div class="actions" v-if="isViewMode && !isEditing">
             <CustomButton label="Excluir" @click="toggleDeleteModal" />
-            <CustomButton label="Editar" secondary @click="toggleEditing" />
+            <CustomButton label="Editar" secondary :disabled="carregando || !doador" @click="toggleEditing" />
         </div>
     </div>
 
     <CustomDialog v-model="open">
-        <template #header>Doador cadastrado!</template>
+        <template #header>{{ isViewMode ? 'Doador atualizado!' : 'Doador cadastrado!' }}</template>
         <template #default>Todos os dados foram salvos com sucesso!</template>
         <template #footer>
             <div class="actions">
@@ -233,67 +233,19 @@ onMounted(() => {
     width: 30%;
 }
 
-.template-endereco {
+.template-linha {
     display: flex;
     flex-direction: row;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 20px;
 }
 
-.cep-input-wrapper-gerenciar {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-    width: 30%;
+.template-linha .input-telefone {
+    width: 250px;
 }
 
-.cep-input-wrapper-gerenciar :deep(.input-container) {
-    flex: 1;
-}
-
-.btn-buscar-cep-gerenciar {
-    padding: 8px 16px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 0.875rem;
-    white-space: nowrap;
-    height: 40px;
-    transition: background-color 0.3s ease;
-}
-
-.btn-buscar-cep-gerenciar:hover:not(:disabled) {
-    background-color: #c41e3a;
-}
-
-.btn-buscar-cep-gerenciar:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.erro-cep-gerenciar {
-    color: #b91c1c;
-    font-size: 0.875rem;
-    margin: 0;
-}
-
-.cep {
-    width: 20%;
-}
-
-.estado {
-    width: 20%;
-}
-
-.bairro {
-    width: 25%;
-}
-
-.cidade {
-    width: 25%;
+.select-clinico {
+    width: 250px;
 }
 
 .actions {

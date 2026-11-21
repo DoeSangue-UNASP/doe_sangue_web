@@ -52,7 +52,6 @@
                 👁️
               </button>
               <button
-                v-if="doador.ehUsuario"
                 @click="agendar(doador)"
                 class="botao-acao"
                 title="Agendar doação"

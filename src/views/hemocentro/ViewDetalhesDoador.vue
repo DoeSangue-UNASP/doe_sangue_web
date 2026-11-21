@@ -28,8 +28,7 @@
           </div>
           <div class="acoes">
             <router-link
-              v-if="doador?.ehUsuario"
-              :to="`/hemocentro/agendar/${doador.id}`"
+              :to="`/hemocentro/agendar/${doador?.id}`"
               class="botao botao-primario"
             >
               📅 Agendar Doação
@@ -49,6 +48,14 @@
           <div class="info-item">
             <span class="label">Data de Nascimento:</span>
             <span class="valor">{{ formatarDataBrasileira(doador?.dataNascimento || '') }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Sexo:</span>
+            <span class="valor">{{ formatarSexo(doador?.sexo) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Tipo Sanguíneo:</span>
+            <span class="valor">{{ doador?.tipoSanguineo || '-' }}</span>
           </div>
         </div>
 
@@ -175,7 +182,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { obterToken } from '@/services/auth';
-import { buscarDoadorPorId, type Doador } from '@/services/doador';
+import { buscarDoadorPorId, formatarSexo, type Doador } from '@/services/doador';
 import {
   listarAgendamentosHemocentro,
   cancelarAgendamento as cancelarAgendamentoPorId,

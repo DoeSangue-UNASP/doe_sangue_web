@@ -54,6 +54,11 @@
           />
         </div>
 
+        <CustomSelect id="sexo" label="Sexo (opcional)" v-model="formulario.sexo" :options="SEXO_OPTIONS" />
+
+        <CustomSelect id="tipoSanguineo" label="Tipo sanguíneo (opcional)" v-model="formulario.tipoSanguineo"
+          :options="TIPO_SANGUINEO_OPTIONS" />
+
         <div v-if="erroFormulario" class="alerta alerta-erro">
           {{ erroFormulario }}
         </div>
@@ -88,9 +93,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { obterToken } from '@/services/auth';
-import { cadastrarLead, type CadastrarLeadRequest } from '@/services/doador';
+import { cadastrarLead, SEXO_OPTIONS, TIPO_SANGUINEO_OPTIONS, type CadastrarLeadRequest } from '@/services/doador';
 import { ApiError } from '@/services/api';
 import { useToast } from '@/composables/useToast';
+import CustomSelect from '@/components/CustomSelect.vue';
 
 const router = useRouter();
 const { sucesso, erro } = useToast();
@@ -105,6 +111,8 @@ const formulario = ref({
   documento: '',
   telefone: '',
   dataNascimento: '',
+  sexo: '',
+  tipoSanguineo: '',
 });
 
 const carregando = ref(false);
@@ -166,6 +174,8 @@ async function submeterFormulario(): Promise<void> {
       documento: formulario.value.documento.replace(/\D/g, ''),
       telefone: formulario.value.telefone.replace(/\D/g, ''),
       dataNascimento: formulario.value.dataNascimento,
+      sexo: formulario.value.sexo,
+      tipoSanguineo: formulario.value.tipoSanguineo,
     };
 
     if (!token) {
@@ -182,6 +192,8 @@ async function submeterFormulario(): Promise<void> {
       documento: '',
       telefone: '',
       dataNascimento: '',
+      sexo: '',
+      tipoSanguineo: '',
     };
 
     setTimeout(() => {

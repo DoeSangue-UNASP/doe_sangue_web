@@ -4,10 +4,11 @@ import CustomButton from '../../components/CustomButton.vue';
 import CustomDialog from '../../components/CustomDialog.vue';
 import CustomDatePicker from '../../components/CustomDatePicker.vue';
 import CustomInput from '../../components/CustomInput.vue';
+import CustomSelect from '../../components/CustomSelect.vue';
 import { useViaCep } from '../../composables/useViaCep';
 import { useToast } from '../../composables/useToast';
 import { obterToken } from '../../services/auth';
-import { atualizarMeuPerfil, buscarMeuPerfil } from '../../services/doador';
+import { atualizarMeuPerfil, buscarMeuPerfil, SEXO_OPTIONS, TIPO_SANGUINEO_OPTIONS } from '../../services/doador';
 
 const open = ref<boolean>(false);
 const carregando = ref(true);
@@ -19,6 +20,8 @@ const form = ref({
     nome: '',
     documento: '',
     dataNascimento: '',
+    sexo: '',
+    tipoSanguineo: '',
     email: '',
     telefone: '',
     cep: '',
@@ -45,6 +48,8 @@ async function carregarPerfil() {
             nome: perfil.nome,
             documento: perfil.documento,
             dataNascimento: perfil.dataNascimento,
+            sexo: perfil.sexo ?? '',
+            tipoSanguineo: perfil.tipoSanguineo ?? '',
             email: perfil.email ?? '',
             telefone: perfil.telefone,
             cep: perfil.endereco?.cep ?? '',
@@ -77,6 +82,8 @@ async function salvar() {
             documento: dados.documento.trim(),
             telefone: dados.telefone.trim(),
             dataNascimento: dados.dataNascimento,
+            sexo: dados.sexo,
+            tipoSanguineo: dados.tipoSanguineo,
             endereco: {
                 cep: dados.cep.trim(),
                 rua: dados.rua.trim(),
@@ -127,9 +134,13 @@ onMounted(carregarPerfil);
             <CustomInput class="input2" label="CPF" id="cpf" placeholder="" v-model="form.documento" />
         </div>
 
-        <div class="template-dois-inputs">
+        <div class="template-dados-clinicos">
             <CustomDatePicker title="Data de Nascimento" id="data-nascimento" v-model="form.dataNascimento"
                 :year-range="anosNascimento" />
+            <CustomSelect class="select-clinico" id="sexo" label="Sexo (opcional)" v-model="form.sexo"
+                :options="SEXO_OPTIONS" />
+            <CustomSelect class="select-clinico" id="tipo-sanguineo" label="Tipo sanguíneo (opcional)"
+                v-model="form.tipoSanguineo" :options="TIPO_SANGUINEO_OPTIONS" />
         </div>
 
         <div class="template-dois-inputs">
@@ -205,6 +216,17 @@ onMounted(carregarPerfil);
 
 .template-dois-inputs .input2 {
     width: 30%;
+}
+
+.template-dados-clinicos {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.select-clinico {
+    width: 250px;
 }
 
 .template-endereco {

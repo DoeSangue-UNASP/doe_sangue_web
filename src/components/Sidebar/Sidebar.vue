@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PhGear, PhSignOut } from '@phosphor-icons/vue';
+import { PhSignOut } from '@phosphor-icons/vue';
 import SidebarOption from './SidebarOption.vue';
 import CustomDialog from '../CustomDialog.vue';
 import { ref } from 'vue';
@@ -31,7 +31,6 @@ const confirmarSaida = () => {
             <slot></slot>
         </section>
         <section class="config-logout">
-            <SidebarOption :icon="PhGear" label="Configurações" route="" />
             <SidebarOption @click="toggleModal" :icon="PhSignOut" label="Sair" route="" />
         </section>
     </div>

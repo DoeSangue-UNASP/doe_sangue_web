@@ -13,6 +13,10 @@ export async function listarHemocentros(): Promise<Hemocentro[]> {
     return apiRequest('/Hemocentro', { method: 'GET' });
 }
 
+export async function buscarMeuHemocentro(token: string): Promise<Hemocentro> {
+    return apiRequest('/Hemocentro/me', { method: 'GET' }, token);
+}
+
 // Gera horários de hora em hora dentro do funcionamento do hemocentro (HH:mm:ss -> HH:mm)
 export function gerarHorarios(abreEm: string, fechaEm: string): string[] {
     const paraMinutos = (hora: string) => {

@@ -28,14 +28,11 @@
             <span class="label">Telefone:</span>
             <span class="valor">{{ formatarTelefone(doador?.telefone || '') }}</span>
           </div>
-          <div class="info-item" v-if="doador?.ehLead" style="grid-column: 1 / -1">
-            <span class="badge badge-aviso">⚠️ Este é um lead - não pode ser agendado</span>
-          </div>
         </div>
       </div>
 
       <!-- Formulário de Agendamento -->
-      <form @submit.prevent="agendar" class="formulario-agendamento" v-if="doador?.ehUsuario">
+      <form @submit.prevent="agendar" class="formulario-agendamento">
         <CustomSelect 
           id="hemocentro"
           label="Hemocentro"
@@ -74,13 +71,6 @@
         </div>
       </form>
 
-      <div v-else-if="doador?.ehLead" class="alerta alerta-aviso">
-        <p>
-          Não é possível agendar uma doação com um lead. O doador deve se cadastrar na plataforma
-          primeiro.
-        </p>
-      </div>
-
       <!-- Mensagem de Sucesso -->
       <div v-if="sucessoFormulario" class="alerta alerta-sucesso">
         ✓ Agendamento criado com sucesso!
@@ -101,6 +91,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { obterToken } from '@/services/auth';
 import { buscarDoadorPorId, type Doador } from '@/services/doador';
 import { criarAgendamentoHemocentro } from '@/services/agendamento';
+import { buscarMeuHemocentro } from '@/services/hemocentro';
 import { ApiError } from '@/services/api';
 import { useToast } from '@/composables/useToast';
 import CustomSelect from '@/components/CustomSelect.vue';
@@ -193,22 +184,10 @@ async function carregarDoador(): Promise<void> {
 
     doador.value = await buscarDoadorPorId(doadorId, token);
 
-    // TODO: Buscar lista de hemocentros da API
-    // Por enquanto, usando dados mock
-    hemocentros.value = [
-      {
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        nomeFantasia: 'Hemocentro Central',
-        abreEm: '08:00',
-        fechaEm: '17:00',
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440001',
-        nomeFantasia: 'Hemocentro Zona Leste',
-        abreEm: '09:00',
-        fechaEm: '18:00',
-      },
-    ];
+    // O agendamento é sempre feito no próprio hemocentro logado
+    const meuHemocentro = await buscarMeuHemocentro(token);
+    hemocentros.value = [meuHemocentro];
+    formData.value.hemocentroId = meuHemocentro.id;
   } catch (err: unknown) {
     if (err instanceof ApiError) {
       if (err.status === 401) {
