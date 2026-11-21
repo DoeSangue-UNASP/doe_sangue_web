@@ -6,6 +6,8 @@ import ViewDoadores from "../views/hemocentro/ViewDoadores.vue";
 import ViewGerenciarDoador from "../views/hemocentro/ViewGerenciarDoador.vue";
 import ViewGerenciarBolsasSangue from "../views/hemocentro/ViewGerenciarBolsasSangue.vue";
 import ViewAgendamentos from "../views/hemocentro/ViewAgendamentos.vue";
+import ViewCadastroLead from "../views/hemocentro/ViewCadastroLead.vue";
+import ViewGerenciarDoadores from "../views/hemocentro/ViewGerenciarDoadores.vue";
 
 export const routesHemocentro : RouteRecordRaw[] = [
   {
@@ -17,6 +19,16 @@ export const routesHemocentro : RouteRecordRaw[] = [
     path: '/hemocentro/doadores',
     name: RouteNames.DOADORES_HEMOCENTRO_LISTAR,
     component: ViewDoadores
+  },
+  {
+    path: '/hemocentro/gerenciar-doadores',
+    name: 'GerenciarDoadores',
+    component: ViewGerenciarDoadores
+  },
+  {
+    path: '/hemocentro/cadastrar-lead',
+    name: 'CadastroLead',
+    component: ViewCadastroLead
   },
   {
     path: '/hemocentro/doadores/novo',
